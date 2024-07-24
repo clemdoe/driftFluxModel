@@ -4,28 +4,35 @@ import matplotlib.pyplot as plt
 from FVM import FVM
 
 class DFMclass():
-    def __init__(self, nCells, uInlet, pOutlet, hInlet, height, fuelRadius, cladRadius, waterGap,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel, Qmax, Qtype):
+    def __init__(self, nCells, tInlet, pInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
         
         self.nCells = nCells
         self.uInlet = uInlet
         self.pOutlet = pOutlet
-        self.hInlet = hInlet
+        self.tInlet = tInlet
+        self.pInlet = pInlet
+        self.hInlet = IAPWS97(T = self.tInlet, P = self.pInlet * 10**(-6)).h * 1000 #J/kg
 
         #Geometry parameters
         self.height = height #m
         self.fuelRadius = fuelRadius #External radius of the fuel m
         self.cladRadius = cladRadius #External radius of the clad m
-        self.waterGap = waterGap #Gap between the clad and the water m
-        self.waterRadius =  self.cladRadius + self.waterGap #External radius of the water m
+        self.cote = cote
+        self.wall_dist = cote/2
+        self.canalType = 'square'
 
-        self.cote = 0.0157
-        self.Poro = 0.5655077285
-        self.flowArea = self.cote ** 2 * self.Poro #m2
+        if self.canalType == 'square':
+            self.flowArea = self.cote ** 2
+        elif self.canalType == 'circular':
+            self.waterGap = self.cote #Gap between the clad and the water m
+            self.waterRadius =  self.cladRadius + self.waterGap #External radius of the water m
+            self.flowArea = np.pi * self.waterRadius ** 2
+
+        self.flowArea = self.cote ** 2
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         self.D_h = self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
-        self.D_h = 0.0078395462 #Hydraulic diameter m2
         self.Dz = self.height/self.nCells #Height of the control volume m
-        self.zList = np.linspace(0, self.height, self.nCells)
+        self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18
         self.K_loss = 0
 
@@ -55,13 +62,16 @@ class DFMclass():
         self.voidFractionCorrel = voidFractionCorrel
         self.voidFractionEquation = 'base'
 
+        self.hlSat = []
+        self.hgSat = []
+     
+    def set_Fission_Power(self, Qmax, Qtype, startHeating, endHeating):
         #Heating parameters
-        self.startheating = 0
-        self.endheating = self.height
+        self.startHeating = startHeating
+        self.endHeating = endHeating
         self.Q = []
-        for z in self.zList:
-            if z >= self.startheating and z <= self.endheating:
-                
+        for z in self.z_mesh:
+            if z >= self.startHeating and z <= self.endHeating: 
                 if Qtype == 'constant':
                     self.Q.append(Qmax)
                 elif Qtype == 'sinusoidal':
@@ -71,12 +81,13 @@ class DFMclass():
         self.q__ = []
         for i in range(len(self.Q)):
             self.q__.append((np.pi * self.fuelRadius**2 * self.Q[i]) / self.flowArea) #W/m3
+
+    def get_Fission_Power(self):
+        """
+        function to retrieve a given source term from the axial profile used to model fission power distribution in the fuel rod
+        """
+        return self.q__
         
-
-        self.hlSat = []
-        self.hgSat = []
-     
-
     def setInitialFields(self): #crée les fields et remplis la premiere colonne
         self.U = [np.ones(self.nCells)*self.uInlet]
         self.P = [np.ones(self.nCells)*self.pOutlet]
@@ -359,7 +370,7 @@ class DFMclass():
         self.xThResiduals.append(np.linalg.norm(self.xTh[-1] - self.xTh[-2]))
 
     def testConvergence(self, k):#change rien et return un boolean
-        print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
+        #print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
         if self.EPSresiduals[-1] < 1e-3 and self.rhoGResiduals[-1] < 1e-3 and self.rhoLResiduals[-1] < 1e-3 and self.xThResiduals[-1] < 1e-3:
             print(f'Convergence reached at iteration number: {k}')
             return True
@@ -389,6 +400,25 @@ class DFMclass():
             elif k == self.maxOuterIteration - 1:
                 print('Convergence not reached')
                 break
+
+    def compute_T_surf(self):
+        self.Pfin = self.P[-1]
+        self.h_z = self.H[-1]
+        self.T_surf = np.zeros(self.nCells)
+        self.Hc = np.zeros(self.nCells)
+        self.T_water = np.zeros(self.nCells)
+        self.T_water[0] = self.tInlet
+        for i in range(self.nCells):
+            Pr_number = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.Prandt
+            Re_number = self.getReynoldsNumber(i)
+            k_fluid = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.k
+            print(f"At axial slice = {i}, computed Reynold # = {Re_number}, computed Prandt # = {Pr_number}, k_fluid = {k_fluid}")
+            self.Hc[i] = (0.023)*(Pr_number)**0.4*(Re_number)**0.8*k_fluid/self.D_h
+            self.T_water[i] = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).T
+            print(f'self.Hc[i]: {self.Hc[i]}, \n self.q__[i]: {self.q__[i]} ,\n 2*np.pi*self.cladRadius: {2*np.pi*self.cladRadius}')
+            self.T_surf[i] = ((self.q__[i]*self.flowArea)/(2*np.pi*self.cladRadius)/self.Hc[i]+self.T_water[i])
+    
+        return self.T_surf
 
     def sousRelaxation(self):
 

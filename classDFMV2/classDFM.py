@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from FVM import FVM
 
 class DFMclass():
-    def __init__(self, nCells, uInlet, pOutlet, hInlet, height, fuelRadius, cladRadius, waterGap,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel, Qmax, Qtype):
+    def __init__(self, nCells, uInlet, pOutlet, hInlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel, Qmax, Qtype):
         
         self.nCells = nCells
         self.uInlet = uInlet
@@ -15,15 +15,18 @@ class DFMclass():
         self.height = height #m
         self.fuelRadius = fuelRadius #External radius of the fuel m
         self.cladRadius = cladRadius #External radius of the clad m
-        self.waterGap = waterGap #Gap between the clad and the water m
-        self.waterRadius =  self.cladRadius + self.waterGap #External radius of the water m
+        self.cote = cote
+        self.canalType = 'square'
 
-        self.cote = 0.0157
-        self.Poro = 0.5655077285
-        self.flowArea = self.cote ** 2 * self.Poro #m2
+        if self.canalType == 'square':
+            self.flowArea = self.cote ** 2
+        elif self.canalType == 'circular':
+            self.waterGap = self.cote #Gap between the clad and the water m
+            self.waterRadius =  self.cladRadius + self.waterGap #External radius of the water m
+            self.flowArea = np.pi * self.waterRadius ** 2
+
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         self.D_h = self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
-        self.D_h = 0.0078395462 #Hydraulic diameter m2
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.zList = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18

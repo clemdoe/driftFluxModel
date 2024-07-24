@@ -19,7 +19,10 @@ fuelRadius = 5.6*10**(-3) #External radius of the fuel m
 cladRadius = 6.52*10**(-3) #External radius of the clad m
 waterGap = 0.5*10**(-3) #Gap between the clad and the water m
 
-DFM1 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, waterGap, 'FVM', 'base', 'base', 'GEramp', 1500000000, 'sinusoidal')
+Poro = 0.5655077285
+cote = 0.0157 * np.sqrt(Poro)
+
+DFM1 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, cote, 'FVM', 'base', 'base', 'GEramp', 500000000, 'constant')
 #DFM2 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, waterGap, 'FVM', 'base', 'base', 'modBestion')
 DFM1.resolveDFM()
 
@@ -37,8 +40,8 @@ Tsat2 = []
 T3 = []
 Tsat3 = []
 for i in range(nCells):
-    T1.append(IAPWS97(P = DFM1.P[-1][i] * 10**(-6), h = h[i], x = 0).T - 273.5)
-    Tsat1.append(IAPWS97(P = DFM1.P[-1][i] * 10**(-6), x = 0).T - 273.5)
+    T1.append(IAPWS97(P = DFM1.P[-1][i] * 10**(-6), h = h[i], x = 0).T)# - 273.5)
+    Tsat1.append(IAPWS97(P = DFM1.P[-1][i] * 10**(-6), x = 0).T)# - 273.5)
 
 #print(f'U: {DFM1.U}, P: {DFM1.P}, H: {DFM1.H}, epsilon: {DFM1.voidFraction} rho: {DFM1.rho}, rhoG: {DFM1.rhoG}, rhoL: {DFM1.rhoL}, xTh: {DFM1.xTh}, f: {DFM1.f}, Vgj: {DFM1.Vgj}, Vgj_prime: {DFM1.VgjPrime}, C0: {DFM1.C0}')
 print(f'T: {T1} \n U: {list(DFM1.U[-1])}, \n P: {list(DFM1.P[-1])}, \n H: {list(DFM1.H[-1])}, \n epsilon: {list(DFM1.voidFraction[-1])}, \n rho: {list(DFM1.rho[-1])}, \n rhoG: {list(DFM1.rhoG[-1])}, \n rhoL: {list(DFM1.rhoL[-1])}, \n xTh: {list(DFM1.xTh[-1])}, \n f: {list(DFM1.f[-1])}, \n Vgj: {list(DFM1.Vgj[-1])}, \n Vgj_prime: {list(DFM1.VgjPrime[-1])}, \n C0: {list(DFM1.C0[-1])}')

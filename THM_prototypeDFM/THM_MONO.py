@@ -305,6 +305,7 @@ class FVM_ConvectionInCanal_MONO:
             print(f"At axial slice = {i}, computed Reynold # = {Re_number}, computed Prandt # = {Pr_number}, k_fluid = {k_fluid}")
             self.Hc[i] = (0.023)*(Pr_number)**0.4*(Re_number)**0.8*k_fluid/self.DH
             self.T_water[i] = IAPWS97(P=self.P_cool, h=self.h_z[i]*10**-3).T
+            print(f'self.Hc[i]: {self.Hc[i]}, \n self.q_fluid[i]: {self.q_fluid[i]} ,\n 2*np.pi*self.cladRadius: {2*np.pi*self.clad_radius}')
             self.T_surf[i] = (self.q_fluid[i]/(2*np.pi*self.clad_radius)/self.Hc[i]+self.T_water[i])
     
         return self.T_surf

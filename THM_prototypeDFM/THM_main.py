@@ -5,6 +5,7 @@
 from THM_MONO import FDM_HeatConductionInFuelPin as FDM_Fuel
 from THM_MONO import FVM_ConvectionInCanal_MONO as FVM_Canal_MONO
 from THM_DONJON_parser import THM_DONJON_parser
+from classDFM import DFMclass
 import numpy as np
 from iapws import IAPWS97
 import matplotlib.pyplot as plt
@@ -29,18 +30,22 @@ class Version5_THM_prototype:
         self.t_end = t_tot
 
         # canal attributes
-      
+
         self.r_w = canal_radius # outer canal radius (m) if type is cylindrical, if type = square rw is the radius of inscribed circle in the square canal, ie half the square's side.
         self.canal_type = canal_type # cylindrical or square, used to determine the cross sectional flow area in the canal and the hydraulic diameter
         self.Lf = fuel_rod_length # fuel rod length in m
+        
         self.T_in = T_inlet # inlet water temperature K
         self.P_cool = P_inlet # coolant pressure in MPa, assumed to be constant along the axial profile.
+        self.hInlet = IAPWS97(T = self.T_in, P = self.P_cool).h * 1000 #J/kg
+        self.uInlet = 4.68292412 #m/s
+        self.pOutlet =  14739394.95 #Pa
+
         self.Q_flow = Q_flow #  mass flux in kg/m^2/s, assumed to be constant along the axial profile.
         self.I_z = I_z # number of mesh elements on axial mesh
 
         self.Q_fiss_amp = Qfiss # amplitude of sine variation, or constant value if Qfiss_variation_type = "constant"
         self.Q_fiss_variation_type = Qfiss_variation_type # allows for a sine / cosine axial variation of the fuel power density in convection case.
-
 
         self.r_f = fuel_radius # fuel pin radius in meters
         self.gap_r = gap_radius # gap radius in meters, used to determine mesh elements for constant surface discretization
@@ -60,18 +65,30 @@ class Version5_THM_prototype:
             print("Warning : only single phase flow treated in this implementation of heat convection in coolant canal.")
 
             # Prepare and solve 1D heat convection along the z direction in the canal.
-            print("$$---------- Calling FVM_ConvectionInCanal_MONO class.")
+            print("$$---------- Calling DFM class.")
             print(f"Setting up heat convection solution along the axial dimension. zmax = {self.Lf} m with {self.I_z} axial elements.")
-            self.convection_sol = FVM_Canal_MONO(self.Lf, self.T_in, self.Q_flow, self.P_cool, self.I_z, self.canal_type, 
-                                            self.r_f, self.clad_r, self.r_w)
-            self.convection_sol.set_Fission_Power(self.Q_fiss_amp, self.Q_fiss_variation_type)
-            print(f"Fission power source initialized with amplitude = {self.Q_fiss_amp} and axial variation profile = {self.Q_fiss_variation_type}.")
-            self.setADI_CL_convection() # setting up the linear system corresponding to the finite volume discretization + boundary condition at z=0
-            print("$---------- Solving for h(z) using the Finite Volumes Method.")
-            self.convection_sol.h_z = self.convection_sol.solve_h_in_canal() # solving the enthalpy evolution in the canal
-            print("$---------- Solving for T_surf(z) using the Dittus-Boelter correlation. Water Properties evaluated by IAPWS97")
-            self.Tsurf = self.convection_sol.compute_T_surf() # computing and retrieving the clad surface temperatures obtained through the Dittus-Boelter correlation
-        
+            # Create an object of the class DFMclass
+            print(f'self.I_z: {self.I_z}')
+            print(f'self.T_in: {self.T_in}')
+            print(f'self.P_cool: {self.P_cool}')
+            print(f'self.Q_flow: {self.Q_flow}')
+            print(f'self.pOutlet: {self.pOutlet}')
+            print(f'self.Lf: {self.Lf}')
+            print(f'self.r_f: {self.r_f}')
+            print(f'self.clad_r: {self.clad_r}')
+            print(f'self.r_w: {self.r_w}')
+            self.convection_sol = DFMclass(self.I_z, self.T_in, self.P_cool * 1000000, self.Q_flow /1000, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', 'base', 'base', 'GEramp')
+                        #  nCells, tInlet, pInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, waterGap,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
+                    
+            self.convection_sol.set_Fission_Power(self.Q_fiss_amp, 'constant', 0, self.Lf)
+            # Resolve the DFM
+            self.convection_sol.resolveDFM()
+            print(f'Pressure: {self.convection_sol.P[-1]} Pa')
+            print(f'Enthalpy: {self.convection_sol.H[-1]} J/kg')
+            Tsurf = self.convection_sol.compute_T_surf()
+            print(f'Temperature at the surface: {Tsurf} K')
+            print(f'Temperature of water: {self.convection_sol.T_water} K')
+
             # Prepare and solve 1D radial heat conduction in the fuel rod, given a Clad surface temperature as a bondary condition 
             self.SetupAndSolve_Conduction_at_all_z() # creates a list of Temperature distributions in the fuel rod given a surface temperature computed by solving the conection problem
             self.get_TFuel_rowlands() # compute and store in the T_eff_fuel attribute the effective fuel temperature given by the Rowlands formula
@@ -93,7 +110,7 @@ class Version5_THM_prototype:
                                             self.r_f, self.clad_r, self.r_w)
             self.convection_sol.set_Fission_Power(self.Q_fiss_amp, self.Q_fiss_variation_type)
             self.setADI_CL_convection(self.transient)
-            self.T = np.zeros((self.N_temps+1, self.convection_sol.N_vol))
+            self.T = np.zeros((self.N_temps+1, self.convection_sol.nCells))
             self.T[0] = self.convection_sol.T_surf
             for i in range(self.N_temps):
                 self.convection_sol.h_z = self.convection_sol.solve_h_in_canal()
@@ -116,7 +133,7 @@ class Version5_THM_prototype:
 
     def SetupAndSolve_Conduction_at_all_z(self, transient = False):
         self.T_distributions_axial = []
-        for axial_plane_nb in range(self.convection_sol.N_vol):
+        for axial_plane_nb in range(self.convection_sol.nCells):
             z = self.convection_sol.z_mesh[axial_plane_nb]
             T_surf = self.convection_sol.T_surf[axial_plane_nb]
             Qfiss = self.convection_sol.get_Fission_Power()[axial_plane_nb]
@@ -124,29 +141,6 @@ class Version5_THM_prototype:
 
         return
     
-    def setADI_CL_convection(self, transient = False):
-        """
-        function used to set up the linear system corresponding to the finite volume discretization + boundary condition at z=0 
-        """
-        if transient:
-            print("Error: transient case not imlpemented yet")
-        else:
-            for i in range(1,self.convection_sol.N_vol-1):
-                
-                self.convection_sol.set_ADi_conv(i,
-                                        ci=-1,
-                                        ai=1,
-                                        bi=0,
-                                        di = self.convection_sol.q_fluid[i]*self.convection_sol.dz/(self.convection_sol.Q_flow*self.convection_sol.A_canal))
-
-            A0,Am1 = np.zeros(self.convection_sol.N_vol), np.zeros(self.convection_sol.N_vol)
-            A0[0] = 1
-            D0 = self.convection_sol.h_z0 + self.convection_sol.q_fluid[0]*self.convection_sol.dz/(2*self.convection_sol.Q_flow*self.convection_sol.A_canal)
-            Am1[-2:]=[-1, 1]
-            Dm1 = self.convection_sol.q_fluid[-1]*self.convection_sol.dz/(self.convection_sol.Q_flow*self.convection_sol.A_canal)
-            self.convection_sol.set_CL_conv(A0,Am1,D0,Dm1)
-        return
-
     def run_Conduction_In_Fuel_at_z(self,z,Qfiss_z,T_surf_z, transient = False):
         print(f"$$---------- Setting up FDM_HeatConductionInFuelPin class for z = {z} m, Qfiss(z) = {Qfiss_z} W/m^3 and T_surf(z) = {T_surf_z} K")
         heat_conduction = FDM_Fuel(self.r_f, self.I_f, self.gap_r, self.clad_r, self.I_c, Qfiss_z, self.k_fuel, self.k_clad, self.H_gap, z, T_surf_z)
@@ -202,14 +196,14 @@ class Version5_THM_prototype:
         return heat_conduction
     
     def get_TFuel_rowlands(self):
-        self.T_eff_fuel = np.zeros(self.convection_sol.N_vol)
+        self.T_eff_fuel = np.zeros(self.convection_sol.nCells)
         for i in range(len(self.T_distributions_axial)):
             self.T_distributions_axial[i].compute_T_eff()
             T_eff_z = self.T_distributions_axial[i].T_eff
             self.T_eff_fuel[i] = T_eff_z
         return
     def get_Tfuel_surface(self):
-        self.T_fuel_surface = np.zeros(self.convection_sol.N_vol)
+        self.T_fuel_surface = np.zeros(self.convection_sol.nCells)
         for i in range(len(self.T_distributions_axial)):
             if len(self.T_distributions_axial[i].T_distrib) == self.T_distributions_axial[i].N_node:
                 T_surf_fuel_z = self.T_distributions_axial[i].T_distrib[self.I_f]
@@ -271,7 +265,7 @@ class Version5_THM_prototype:
         """
         Function used to compare the results obtained in the current instance with a reference DONJON/THM.
         """
-        self.reference_case = THM_DONJON_parser(THM_DONJON_path, self.t0, self.dt, self.t_end, self.convection_sol.N_vol, self.Lf)
+        self.reference_case = THM_DONJON_parser(THM_DONJON_path, self.t0, self.dt, self.t_end, self.convection_sol.nCells, self.Lf)
         self.visu_TFuel = visu_params[0]
         self.visu_TFuelSurface = visu_params[1]
         self.visu_TWater = visu_params[2]
