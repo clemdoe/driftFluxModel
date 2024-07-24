@@ -362,5 +362,5 @@ class Version5_THM_prototype:
         print(f'Tfuel : {self.T_eff_fuel} K')
         print(f'Twater : {self.convection_sol.T_water} K')
         print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
-
-        return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1]
+        print(f'Water density: {self.convection_sol.rho[-1]} kg/m^3')
+        return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1], self.convection_sol.rho[-1]
