@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 class Version5_THM_prototype:
     def __init__(self, case_name, 
-                 canal_radius, canal_type, fuel_rod_length, T_inlet, P_inlet, Q_flow, I_z, Qfiss, Qfiss_variation_type, 
+                 canal_radius, canal_type, fuel_rod_length, hInlet, pOutlet, Q_flow, I_z, Qfiss, Qfiss_variation_type, 
                  fuel_radius, gap_radius, clad_radius, k_fuel, H_gap, k_clad, I_f, I_c, plot_at_z,
                  dt, t_tot):
         """
@@ -34,14 +34,13 @@ class Version5_THM_prototype:
         self.canal_type = canal_type # cylindrical or square, used to determine the cross sectional flow area in the canal and the hydraulic diameter
         self.Lf = fuel_rod_length # fuel rod length in m
         
-        self.T_in = T_inlet # inlet water temperature K
-        self.P_cool = P_inlet # coolant pressure in MPa, assumed to be constant along the axial profile.
-        self.hInlet = IAPWS97(T = self.T_in, P = self.P_cool).h * 1000 #J/kg
-        self.uInlet = 4.68292412 #m/s
-        self.pOutlet =  14739394.95 #Pa
 
+        self.hInlet = hInlet
         self.Q_flow = Q_flow #  mass flux in kg/m^2/s, assumed to be constant along the axial profile.
         self.I_z = I_z # number of mesh elements on axial mesh
+        self.rhoInlet = 1000
+        self.pOutlet =  pOutlet #Pa
+        self.uInlet = self.Q_flow / self.rhoInlet #m/s
 
         self.Q_fiss_amp = Qfiss # amplitude of sine variation, or constant value if Qfiss_variation_type = "constant"
         self.Q_fiss_variation_type = Qfiss_variation_type # allows for a sine / cosine axial variation of the fuel power density in convection case.
@@ -68,15 +67,13 @@ class Version5_THM_prototype:
             print(f"Setting up heat convection solution along the axial dimension. zmax = {self.Lf} m with {self.I_z} axial elements.")
             # Create an object of the class DFMclass
             print(f'self.I_z: {self.I_z}')
-            print(f'self.T_in: {self.T_in}')
-            print(f'self.P_cool: {self.P_cool}')
             print(f'self.Q_flow: {self.Q_flow}')
             print(f'self.pOutlet: {self.pOutlet}')
             print(f'self.Lf: {self.Lf}')
             print(f'self.r_f: {self.r_f}')
             print(f'self.clad_r: {self.clad_r}')
             print(f'self.r_w: {self.r_w}')
-            self.convection_sol = DFMclass(self.I_z, self.T_in, self.P_cool * 1000000, self.Q_flow /1000, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', 'base', 'base', 'GEramp')
+            self.convection_sol = DFMclass(self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', 'base', 'base', 'GEramp')
                         #  nCells, tInlet, pInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, waterGap,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
                     
             self.convection_sol.set_Fission_Power(self.Q_fiss_amp, 'constant', 0, self.Lf)
@@ -100,7 +97,7 @@ class Version5_THM_prototype:
             if self.plot_results:
                 for z_val in self.plot_results:
                     self.plot_Temperature_at_z(z_val)
-        else:
+        """ else:
             self.transient = True
             print("$$$---------- THM: prototype, transient case.")
             print("Warning : only single phase flow treated in this implementation of heat convection in coolant canal.")
@@ -120,7 +117,7 @@ class Version5_THM_prototype:
             if self.plot_results:
                 for z_val in self.plot_results:
                     self.plot_Temperature_at_z(z_val)
-        return
+        return """
     
     def set_transitoire(self, t_tot, Tini, dt):
         self.t_tot, self.dt = t_tot, dt           
@@ -247,9 +244,10 @@ class Version5_THM_prototype:
         else:
             plane_index_print = str(plane_index).split(".")[0]+str(plane_index).split(".")[1]
         print(f"at z = {z_val}, temp distrib is = {Temperature_distrib_to_plot}")
+        print(f'z_axis is {plotting_mesh}')
         colors = ["lime", "bisque", "chocolate", "royalblue"]
         labels = ["Fuel", "Gap", "Clad", "Water"]
-        fig_filled, axs = plt.subplots(dpi=200)
+        fig_filled, axs = plt.subplots()
         for i in range(len(physical_regions_bounds)-1):
             axs.fill_between(x=radii_at_bounds, y1=(Tcenter+50)*np.ones(len(radii_at_bounds)), y2=(Twater-50)*np.ones(len(radii_at_bounds)),where=(radii_at_bounds>=physical_regions_bounds[i])&(radii_at_bounds<=physical_regions_bounds[i+1]), color = colors[i], label = labels[i])
         axs.scatter(plotting_mesh, Temperature_distrib_to_plot, marker = "D", color="black",s=10, label="Radial temperature distribution in Fuel rod.")
@@ -259,6 +257,8 @@ class Version5_THM_prototype:
         axs.set_ylabel(f"Temperature in K")
         axs.set_title(f"Temperature distribution in fuel rod at z = {z_val}, {self.name}")
         fig_filled.savefig(f"{self.name}_Figure_plane{plane_index_print}_colors")
+
+        plt.show()
 
     def compare_with_THM_DONJON(self, THM_DONJON_path, visu_params):
         """
@@ -358,3 +358,9 @@ class Version5_THM_prototype:
         #print('TCOMB',TCOMB)
         return
 
+    def get_nuclear_parameters(self):
+        print(f'Tfuel : {self.T_eff_fuel} K')
+        print(f'Twater : {self.convection_sol.T_water} K')
+        print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
+
+        return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1]

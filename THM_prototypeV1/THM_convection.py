@@ -8,14 +8,12 @@ import matplotlib.pyplot as plt
 from FVM import FVM
 
 class DFMclass():
-    def __init__(self, nCells, tInlet, pInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
+    def __init__(self, nCells, hInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
         
         self.nCells = nCells
         self.uInlet = uInlet
         self.pOutlet = pOutlet
-        self.tInlet = tInlet
-        self.pInlet = pInlet
-        self.hInlet = IAPWS97(T = self.tInlet, P = self.pInlet * 10**(-6)).h * 1000 #J/kg
+        self.hInlet = hInlet
 
         #Geometry parameters
         self.height = height #m
@@ -411,7 +409,6 @@ class DFMclass():
         self.T_surf = np.zeros(self.nCells)
         self.Hc = np.zeros(self.nCells)
         self.T_water = np.zeros(self.nCells)
-        self.T_water[0] = self.tInlet
         for i in range(self.nCells):
             Pr_number = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.Prandt
             Re_number = self.getReynoldsNumber(i)
