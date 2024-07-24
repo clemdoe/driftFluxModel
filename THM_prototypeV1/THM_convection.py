@@ -1,3 +1,7 @@
+# This file contains the implementation of the drift flux model for the THM prototype
+# Authors : Clement Huet
+# Date : 2021-06-01
+
 import numpy as np
 from iapws import IAPWS97
 import matplotlib.pyplot as plt

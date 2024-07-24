@@ -1,11 +1,10 @@
-# Used to create instances of THM class and solve convection + conduction in fuel rod.
-# author : R. Guasch
-# Purpose : prototyping for further developments in THM module of Donjon5
+#Used to run the THM prototype class and compare the results with a reference THM_DONJON case.
+#Authors : Clement Huet, Raphael Guasch
 
-from THM_MONO import FDM_HeatConductionInFuelPin as FDM_Fuel
-from THM_MONO import FVM_ConvectionInCanal_MONO as FVM_Canal_MONO
+
+from THM_conduction import FDM_HeatConductionInFuelPin as FDM_Fuel
+from THM_convection import DFMclass
 from THM_DONJON_parser import THM_DONJON_parser
-from classDFM import DFMclass
 import numpy as np
 from iapws import IAPWS97
 import matplotlib.pyplot as plt
@@ -354,101 +353,8 @@ class Version5_THM_prototype:
                 ax.set_title("Error on coolant temperature (Prototype vs DONJON)")        
                 ax.legend(loc="best")
                 fig.savefig(f"{self.name}_error_Twater_THM_DONJON")
+
+            plt.show()
         #print('TCOMB',TCOMB)
         return
 
-
-# Begining of the script used to test the THM prototype class.
-compute_case1 = True
-compute_case2 = False
-
-
-if compute_case1:
-    #Case 1 : base parameters
-    # Parameters used to create object from FDM_HeatConductioninFuelpin class
-    Qfiss1 = 0.3e9 # W/m^3
-    fuel_radius1 = 5.6e-3 # m
-    gap_width1 = 0.54e-3 # m
-    clad_width1 = 0.38e-3 # m
-    k_fuel1 = 5 # W/m/K
-    H_gap1 = 10000 # W/m^2/K
-    k_clad1 = 10 # W/m/K
-    I_f1 = 8
-    I_c1 = 3
-
-    # Paramters used to create object from FVM_ConvectionInCanal class
-    canal_type1 = "cylindrical" #"square" #"cylindrical"
-    canal_width1 = 0.5e-3 # m
-    Lf1 = 2 # m
-    T_in1 = 500 # K
-    Q_flow1 = 7000 # kg/m^2/s
-    P_cool1 = 10.8 #MPa
-    I_z1 = 10
-
-
-    rw1=fuel_radius1+gap_width1+clad_width1+canal_width1 # canal radius
-    gap_rad1 = fuel_radius1+gap_width1
-    clad_rad1 = gap_rad1+clad_width1
-    plot_at_z1 = [0.8]
-    case1 = Version5_THM_prototype("Case1_ENE6107A_project", rw1, canal_type1, Lf1, T_in1, P_cool1, Q_flow1, I_z1, Qfiss1, "constant", 
-                                fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, dt=0, t_tot=0)
-
-
-    print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
-    print(f"case 1 T_water is {case1.convection_sol.T_water} K")
-    print(f"case 1 Hc is {0.5*(case1.convection_sol.Hc[3]+case1.convection_sol.Hc[4])} W/m^2/K")
-    print(f"q_fluid1 = {case1.convection_sol.q_fluid}")
-
-    print(f"case 1 A_canal = {case1.convection_sol.A_canal} m^2")
-    print(f"case 1 T_surf is {case1.convection_sol.T_surf} K")
-
-
-    print(f"case 1 T_eff in fuel is {case1.T_eff_fuel} K")
-    print(f"case 1 T_surf fuel is {case1.T_fuel_surface} K")
-    case1.compare_with_THM_DONJON("/home/clhue/BWR_THM_OF/THM_prototype/pincell_mphy_thm_devoir.result",[True, True, True, True, True, True])
-
-
-
-
-
-if compute_case2:
-    #Case 2 : base parameters
-    # Parameters used to create object from FDM_HeatConductioninFuelpin class
-    Qfiss2 = 0.3e9 # W/m^3
-    fuel_radius2 = 5.4e-3 # m
-    gap_width2 = 0.6e-3 # m
-    clad_width2 = 0.4e-3 # m
-    k_fuel2 = 5 # W/m/K
-    H_gap2 = 10000 # W/m^2/K
-    k_clad2 = 15 # W/m/K
-    I_f2 = 80
-    I_c2 = 3
-
-    # Paramters used to create object from FVM_ConvectionInCanal class
-    canal_type2 = "cylindrical"
-    canal_width2 = 0.35e-3 # m
-    Lf2 = 2.5 # m
-    T_in2 = 450 # K
-    Q_flow2 = 7200 # kg/m^2/s
-    P_cool2 = 10.8 #MPa
-    I_z2 = 100
-
-
-    rw2=fuel_radius2+gap_width2+clad_width2+canal_width2 # canal radius
-    gap_rad2 = fuel_radius2+gap_width2
-    clad_rad2 = gap_rad2+clad_width2
-    plot_at_z2 = [0.7,0.8,0.9]
-    case2 = Version5_THM_prototype("Case2_ENE6107A_project", rw2, "cylindrical", Lf2, T_in2, P_cool2, Q_flow2, I_z2, Qfiss2, "sine", 
-                                fuel_radius2, gap_rad2, clad_rad2, k_fuel2, H_gap2, k_clad2, I_f2, I_c2, plot_at_z2)
-
-    print(f"case 2 h_z is {case2.convection_sol.h_z} J/kg")
-    print(f"case 2 T_water is {(case2.convection_sol.T_water[35]+case2.convection_sol.T_water[36])/2} K")
-    print(f"case 2 Hc is {0.5*(case2.convection_sol.Hc[35]+case2.convection_sol.Hc[36])} W/m^2/K")
-    print(f"q_fluid2 = {case2.convection_sol.q_fluid}")
-
-    print(f"case 2 A_canal = {case2.convection_sol.A_canal} m^2")
-    print(f"case 2 T_surf is {(case2.convection_sol.T_surf[35]+case2.convection_sol.T_surf[36])/2} K")
-
-
-    print(f"case 2 T_eff in fuel is {case2.T_eff_fuel} K")
-    print(f"case 2 T_surf fuel is {case2.T_fuel_surface} K")
