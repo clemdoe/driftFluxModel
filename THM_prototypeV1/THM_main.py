@@ -19,7 +19,7 @@ compute_case2 = False
 if compute_case1:
     #Case 1 : base parameters
     # Parameters used to create object from FDM_HeatConductioninFuelpin class
-    Qfiss1 = 0.5e9 # W/m^3
+    Qfiss1 = 1e9 # W/m^3
     fuel_radius1 = 5.6*10**(-3) #External radius of the fuel m
     gap_width1 = 0.54e-3 # m
     clad_width1 = 0.38e-3 # m
@@ -48,7 +48,7 @@ if compute_case1:
     gap_rad1 = fuel_radius1+gap_width1
     clad_rad1 = gap_rad1+clad_width1
     plot_at_z1 = [0.8]
-    case1 = Version5_THM_prototype("Case1_ENE6107A_project", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
+    case1 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "sinusoidal", 
                                 fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, dt=0, t_tot=0)
 
     print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
@@ -65,4 +65,6 @@ if compute_case1:
     #case1.compare_with_THM_DONJON("C:/Users/cleme/OneDrive/Documents/Poly/BWR/driftFluxModel/THM_prototypeDFM/pincell_mphy_thm_devoir.result",[True, True, True, True, True, True])
     #case1.plot_Temperature_at_z(1)
     case1.get_nuclear_parameters()
+    case1.plotColorMap()
+    case1.plotThermohydraulicParameters([True, True, True, True, True])
 

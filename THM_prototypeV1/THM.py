@@ -76,7 +76,7 @@ class Version5_THM_prototype:
             self.convection_sol = DFMclass(self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', 'base', 'base', 'GEramp')
                         #  nCells, tInlet, pInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, waterGap,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
                     
-            self.convection_sol.set_Fission_Power(self.Q_fiss_amp, 'constant', 0, self.Lf)
+            self.convection_sol.set_Fission_Power(self.Q_fiss_amp, self.Q_fiss_variation_type, 0, self.Lf)
             # Resolve the DFM
             self.convection_sol.resolveDFM()
             print(f'Pressure: {self.convection_sol.P[-1]} Pa')
@@ -260,6 +260,25 @@ class Version5_THM_prototype:
 
         plt.show()
 
+    def plotColorMap(self):
+        print("$$---------- Plotting colormap of temperature distribution in fuel rod.")
+        fig, ax = plt.subplots()
+        T = []
+        for i in range(len(self.T_distributions_axial)):
+            T.append(self.T_distributions_axial[i].T_distrib)
+        R = self.T_distributions_axial[0].plot_mesh
+        Z = self.convection_sol.z_mesh
+        print(f'T: {T}')
+        print(f'R: {R}')
+        print(f'Z: {Z}')
+        plt.xlabel('Rayon (mm)')
+        plt.ylabel('Hauteur (m)')
+        plt.title('Temperature (K) en fonction du rayon et de la hauteur')
+        plt.pcolormesh(R, Z, T, cmap = 'plasma') 
+        plt.colorbar()
+        plt.show()
+
+
     def compare_with_THM_DONJON(self, THM_DONJON_path, visu_params):
         """
         Function used to compare the results obtained in the current instance with a reference DONJON/THM.
@@ -358,9 +377,56 @@ class Version5_THM_prototype:
         #print('TCOMB',TCOMB)
         return
 
+
+
     def get_nuclear_parameters(self):
         print(f'Tfuel : {self.T_eff_fuel} K')
         print(f'Twater : {self.convection_sol.T_water} K')
         print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
         print(f'Water density: {self.convection_sol.rho[-1]} kg/m^3')
+        
         return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1], self.convection_sol.rho[-1]
+    
+    def plotThermohydraulicParameters(self, visuParam):
+        
+        if visuParam[0]:
+            fig1, ax1 = plt.subplots()
+            ax1.plot(self.convection_sol.z_mesh, self.T_eff_fuel, label="Fuel temperature")
+            ax1.plot(self.convection_sol.z_mesh, self.convection_sol.T_water, label="Coolant temperature")
+            ax1.set_xlabel("Axial position in m")
+            ax1.set_ylabel("Temperature in K")
+            ax1.set_title("Temperature distribution in fuel rod")
+            ax1.legend(loc="best")
+
+        if visuParam[1]:
+            fig2, ax2 = plt.subplots()
+            ax2.plot(self.convection_sol.z_mesh, self.convection_sol.voidFraction[-1], label="Void fraction")
+            ax2.set_xlabel("Axial position in m")
+            ax2.set_ylabel("Void fraction")
+            ax2.set_title("Void fraction distribution in coolant canal")
+            ax2.legend(loc="best")
+
+        if visuParam[2]:
+            fig3, ax3 = plt.subplots()
+            ax3.plot(self.convection_sol.z_mesh, self.convection_sol.rho[-1], label="Density")
+            ax3.set_xlabel("Axial position in m")
+            ax3.set_ylabel("Density in kg/m^3")
+            ax3.set_title("Density distribution in coolant canal")
+            ax3.legend(loc="best")
+
+        if visuParam[3]:
+            fig4, ax4 = plt.subplots() 
+            ax4.plot(self.convection_sol.z_mesh, self.convection_sol.P[-1], label="Pressure")
+            ax4.set_xlabel("Axial position in m")
+            ax4.set_ylabel("Pressure in Pa")
+            ax4.set_title("Pressure distribution in coolant canal")
+
+        if visuParam[4]:
+            fig5, ax5 = plt.subplots()
+            ax5.plot(self.convection_sol.z_mesh, self.convection_sol.U[-1], label="Enthalpy")
+            ax5.set_xlabel("Axial position in m")
+            ax5.set_ylabel("Velocity in m/s")
+            ax5.set_title("Velocity distribution in coolant canal")
+
+        plt.show()
+        return
