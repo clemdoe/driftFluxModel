@@ -72,6 +72,7 @@ class DFMclass():
             else:
                 self.Q.append(0)
         self.q__ = []
+
         for i in range(len(self.Q)):
             self.q__.append((np.pi * self.fuelRadius**2 * self.Q[i]) / self.flowArea) #W/m3
         
@@ -247,9 +248,11 @@ class DFMclass():
         pass
 
     def GEramp(self):
+
         self.rhoL.append(np.ones(self.nCells))
         self.rhoG.append(np.ones(self.nCells))
         self.rho.append(np.ones(self.nCells))
+
         for i in range(self.nCells):
             rho_l_new, rho_g_new, rho_new = self.getDensity(i)
             self.rhoL[-1][i] = rho_l_new

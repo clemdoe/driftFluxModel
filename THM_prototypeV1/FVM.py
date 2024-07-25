@@ -73,7 +73,3 @@ class FVM:
     def verticalResolution(self):
         self.differential()
 
-
-
-L = [np.array([1,2]), np.array([3,4])]
-print(L[-1][0])
