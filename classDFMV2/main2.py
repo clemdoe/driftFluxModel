@@ -47,6 +47,7 @@ for i in range(nCells):
 print(f'T: {T1} \n U: {list(DFM1.U[-1])}, \n P: {list(DFM1.P[-1])}, \n H: {list(DFM1.H[-1])}, \n epsilon: {list(DFM1.voidFraction[-1])}, \n rho: {list(DFM1.rho[-1])}, \n rhoG: {list(DFM1.rhoG[-1])}, \n rhoL: {list(DFM1.rhoL[-1])}, \n xTh: {list(DFM1.xTh[-1])}, \n f: {list(DFM1.f[-1])}, \n Vgj: {list(DFM1.Vgj[-1])}, \n Vgj_prime: {list(DFM1.VgjPrime[-1])}, \n C0: {list(DFM1.C0[-1])}')
 
 print(f'z: {list(z)}') 
+print(f'q__ = {DFM1.q__[0] * DFM1.DV}')
 
 fig1 = plt.figure()
 plt.plot(z, h, label="Q = 500 MW")

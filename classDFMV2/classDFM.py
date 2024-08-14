@@ -74,6 +74,7 @@ class DFMclass():
         self.q__ = []
 
         for i in range(len(self.Q)):
+            #self.q__.append(10910/self.DV)
             self.q__.append((np.pi * self.fuelRadius**2 * self.Q[i]) / self.flowArea) #W/m3
         
 
