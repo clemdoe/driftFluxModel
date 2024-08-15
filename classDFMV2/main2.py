@@ -26,6 +26,7 @@ DFM1 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadi
 DFM2 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, cote, 'FVM', 'blasius', 'base', 'GEramp', 500000000, 'constant')
 #DFM2 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, waterGap, 'FVM', 'base', 'base', 'modBestion')
 DFM1.resolveDFM()
+DFM2.resolveDFM()
 DFM1.createBoundaryEnthalpy()
 h = DFM1.H[-1]/1000
 eps = DFM1.voidFraction[-1]
@@ -119,7 +120,8 @@ plt.title('Velocity distribution')
 plt.legend()
 
 fig11 = plt.figure()
-plt.plot(z, DFM1.P[-1], label="0.0001")
+plt.plot(z, DFM1.P[-1], label="0.000033")
+plt.plot(z, DFM2.P[-1], label="0.00003")
 plt.xlabel('Height (m)')
 plt.ylabel('Pressure (Pa)')
 plt.title('Pressure distribution')

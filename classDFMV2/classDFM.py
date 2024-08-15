@@ -496,9 +496,10 @@ class DFMclass():
         P = self.P[-1][i]
 
         if self.frfaccorel == 'base': #Validated
-            return 0.0001
+            return 0.000033
         Re = self.getReynoldsNumber(i)
         if self.frfaccorel == 'blasius': #Not Validated
+            return 0.00003
             return 0.186 * Re**(-0.2)
         if self.frfaccorel == 'Churchill': #Not Validated
             Ra = 0.4 * (10**(-6)) #Roughness
