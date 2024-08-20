@@ -372,7 +372,7 @@ class DFMclass():
         self.xThResiduals.append(np.linalg.norm(self.xTh[-1] - self.xTh[-2]))
 
     def testConvergence(self, k):#change rien et return un boolean
-        #print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
+        print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
         if self.EPSresiduals[-1] < 1e-3 and self.rhoGResiduals[-1] < 1e-3 and self.rhoLResiduals[-1] < 1e-3 and self.xThResiduals[-1] < 1e-3:
             print(f'Convergence reached at iteration number: {k}')
             return True
@@ -390,7 +390,24 @@ class DFMclass():
                 self.P.append(Ptemp)
                 self.H.append(Htemp)
             
-            self.updateFields()
+            print(f'in resolveDFM, P: {self.P[-1]}')
+            updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.rho[-1], self.rhoG[-1], self.rhoL[-1], self.voidFraction[-1], self.xTh[-1], self.f[-1], self.Vgj[-1], self.VgjPrime[-1], self.C0[-1], self.Dhfg[-1], self.areaMatrix_1[-1], self.areaMatrix_2[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
+            updateVariables.updateFields()
+            
+            self.xTh.append(updateVariables.xThTEMP)
+            self.rhoL.append(updateVariables.rholTEMP)
+            self.rhoG.append(updateVariables.rhogTEMP)
+            self.rho.append(updateVariables.rhoTEMP)
+            self.voidFraction.append(updateVariables.voidFractionTEMP)
+            self.Dhfg.append(updateVariables.DhfgTEMP)
+            self.f.append(updateVariables.fTEMP)
+            self.areaMatrix_1.append(updateVariables.areaMatrix_1TEMP)
+            self.areaMatrix_2.append(updateVariables.areaMatrix_2TEMP)
+            self.Vgj.append(updateVariables.VgjTEMP)
+            self.C0.append(updateVariables.C0TEMP)
+            self.VgjPrime.append(updateVariables.VgjPrimeTEMP)
+
+            #self.updateFields()
             self.sousRelaxation()
             self.calculateResiduals()
             self.I.append(k)
@@ -520,7 +537,7 @@ class DFMclass():
         P = self.P[-1][i]
 
         if self.frfaccorel == 'base': #Validated
-            return 0.0001
+            return 0.000033
         Re = self.getReynoldsNumber(i)
         if self.frfaccorel == 'blasius': #Not Validated
             return 0.186 * Re**(-0.2)
@@ -583,3 +600,241 @@ class DFMclass():
         for i in range(self.nCells):
             self.hlSat.append(self.getPhasesEnthalpy(i)[0])
             self.hgSat.append(self.getPhasesEnthalpy(i)[1])
+
+
+class statesVariables():
+    """
+            updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.rho[-1], self.rhoG[-1], self.rhoL[-1], self.voidFraction[-1], self.xTh[-1], self.f[-1], self.Vgj[-1], self.VgjPrime[-1], self.C0[-1], self.Dhfg[-1], self.areaMatrix_1[-1], self.areaMatrix_2[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
+            updateVariables.updateFields()
+            
+            self.xTh.append(updateVariables.xThTEMP)
+            self.rhoL.append(updateVariables.rholTEMP)
+            self.rhoG.append(updateVariables.rhogTEMP)
+            self.rho.append(updateVariables.rhoTEMP)
+            self.voidFraction.append(updateVariables.voidFractionTEMP)
+            self.Dhfg.append(updateVariables.DhfgTEMP)
+            self.f.append(updateVariables.fTEMP)
+            self.areaMatrix_1.append(updateVariables.areaMatrix_1TEMP)
+            self.areaMatrix_2.append(updateVariables.areaMatrix_2TEMP)
+            self.Vgj.append(updateVariables.VgjTEMP)
+            self.C0.append(updateVariables.C0TEMP)
+            self.VgjPrime.append(updateVariables.VgjPrimeTEMP)
+            """
+    def __init__(self, U, P, H, rho, rhoG, rhoL, voidFraction, xTh, f, Vgj, VgjPrime, C0, Dhfg, areaMatrix_1, areaMatrix_2, D_h, flowarea, DV, voidFractionCorrel, frfaccorel, P2Pcorel):
+        self.nCells = len(U)
+        
+        self.U = U
+        self.P = P
+        self.H = H
+        self.rho = rho
+        self.rhoG = rhoG
+        self.rhoL = rhoL
+        self.voidFraction = voidFraction
+        self.xTh = xTh
+        self.f = f
+        self.Vgj = Vgj
+        self.VgjPrime = VgjPrime
+        self.C0 = C0
+        self.Dhfg = Dhfg
+        self.areaMatrix_1 = areaMatrix_1
+        self.areaMatrix_2 = areaMatrix_2
+        self.voidFractionCorrel = voidFractionCorrel
+        self.frfaccorel = frfaccorel
+        self.P2Pcorel = P2Pcorel
+        self.g = 9.81
+        self.D_h = D_h
+        self.flowArea = flowarea
+        self.K_loss = 0
+        self.Dz = 1
+        self.DV = DV
+
+    def createFields():
+        pass
+
+    def updateFields(self):
+
+        self.xThTEMP = np.ones(self.nCells)
+        for i in range(self.nCells):
+            self.xThTEMP[i] = self.getQuality(i)
+        
+        if self.voidFractionCorrel == 'modBestion':
+            self.modBestion()
+
+        elif self.voidFractionCorrel == 'HEM1':
+            self.HEM1()
+
+        elif self.voidFractionCorrel == 'GEramp':
+            self.GEramp()
+
+        elif self.voidFractionCorrel == 'EPRIvoidModel':
+            self.EPRIvoidModel()
+
+    def GEramp(self):
+        pass
+    
+    def modBestion(self):
+        print('in modBestion')
+        self.rholTEMP, self.rhogTEMP, self.rhoTEMP, self.voidFractionTEMP, self.DhfgTEMP, self.fTEMP, self.areaMatrix_1TEMP, self.areaMatrix_2TEMP, self.areaMatrix_2TEMP, self.VgjTEMP, self.C0TEMP, self.VgjPrimeTEMP = self.rhoL, self.rhoG, self.rho, self.voidFraction, self.Dhfg, self.f, self.areaMatrix_1, self.areaMatrix_2, self.areaMatrix_2, self.Vgj, self.C0, self.VgjPrime
+        for i in range(self.nCells):
+            self.rholTEMP[i], self.rhogTEMP[i], self.rhoTEMP[i] = self.getDensity(i)
+            self.C0TEMP[i] = self.getC0(i)
+            self.VgjTEMP[i] = self.getVgj(i)
+            self.VgjPrimeTEMP[i] = self.getVgj_prime(i)
+            self.DhfgTEMP[i] = self.getHfg(i)
+            for j in range(1000):
+                voidFractionNew = self.getVoidFraction(i)
+                if np.linalg.norm(voidFractionNew - self.voidFractionTEMP[i]) < 1e-3:
+                    self.voidFractionTEMP[i] = voidFractionNew
+                    self.rhoTEMP[i] = self.getDensity(i)[2]
+                    break
+                elif j == 999:
+                    print('Convergence in update fields not reached')
+                    break
+                else:
+                    self.voidFractionTEMP[i] = voidFractionNew
+                    self.rhoTEMP[i] = self.getDensity(i)[2]
+
+            self.fTEMP[i] = self.getFrictionFactor(i)
+            self.areaMatrix_1TEMP[i], self.areaMatrix_2TEMP[i] = self.getAreas(i)
+    
+    def HEM1(self):
+        pass
+
+    def GEramp(self):
+        pass
+
+    def EPRIvoidModel(self):
+        pass
+
+    def getDensity(self, i):
+        vapor = IAPWS97(P = self.P[i]*(10**(-6)), x = 1)
+        liquid = IAPWS97(P = self.P[i]*(10**(-6)), x = 0)
+        rho_g = vapor.rho
+        rho_l = liquid.rho
+        rho = rho_l * (1 - self.voidFractionTEMP[i]) + rho_g * self.voidFractionTEMP[i]
+        return rho_l, rho_g, rho
+    
+    def getQuality(self, i):
+        H = self.H[i]
+        hl, hg = self.getPhasesEnthalpy(i)
+        if H*0.001 < hl:
+            return 0
+        elif H*0.001 > hg:
+            return 1
+        elif H*0.001 <= hg and H*0.001 >= hl:
+            return (H*0.001 - hl)/(hg - hl)
+    
+    def getVoidFraction(self, i):
+        correl = 'simple'
+        if correl == 'simple':
+            x_th = self.xThTEMP[i]
+            rho_l = self.rholTEMP[i]
+            rho_g = self.rhogTEMP[i]
+            if x_th == 0:
+                return 0.0001
+            elif x_th == 1:
+                return 0.99
+            else:
+                return (x_th * rho_l)/(x_th * rho_l + (1 - x_th) * rho_g)
+        elif correl == 'paths':
+            x_th = self.xThTEMP[i]
+            rho_l = self.rholTEMP[i]
+            rho_g = self.rhogTEMP[i]
+            u = self.U[i]
+            V_gj = self.VgjTEMP[i]
+            C0 = self.C0TEMP[i]
+            if x_th == 0:
+                return 0.0001
+            elif x_th == 1:
+                return 0.99
+            else:
+                return x_th/(C0 * (x_th + (rho_g / rho_l) * (1 - x_th)) + (rho_g * V_gj) / (rho_l * u))
+    
+    def getVgj(self, i):
+        if self.voidFractionCorrel == 'modBestion':
+            if self.rhogTEMP[i] == 0:
+                return 0
+            if self.rholTEMP[i] == 0:
+                return 0
+            return 0.188 * np.sqrt(((self.rholTEMP[i] - self.rhogTEMP[i]) * self.g * self.D_h ) / self.rhogTEMP[i] )
+    
+    def getC0(self, i):
+        if self.voidFractionCorrel == 'modBestion':
+            rho_g = self.rhogTEMP[i]
+            rho_l = self.rholTEMP[i]
+            if rho_g == 0:
+                return 0
+            if rho_l == 0:
+                return 0
+            return 1.2 - 0.2*np.sqrt(rho_g / rho_l)
+        
+    def getVgj_prime(self, i):
+        if self.voidFractionCorrel == 'modBestion':
+            rho_g = self.rhogTEMP[i]
+            rho_l = self.rholTEMP[i]
+            U = self.U[i]
+            C0 = self.C0TEMP[i]
+            Vgj = self.VgjTEMP[i]
+            Vgj_prime = Vgj + (C0 - 1) * U
+            return Vgj_prime
+    
+    def getHfg(self, i):
+        vapor = IAPWS97(P = self.P[i]*(10**(-6)), x = 1)
+        liquid = IAPWS97(P = self.P[i]*(10**(-6)), x = 0)
+        return (vapor.h - liquid.h)
+    
+    def getFrictionFactor(self, i):
+        U = self.U[i]
+        P = self.P[i]
+
+        if self.frfaccorel == 'base': #Validated
+            return 0.0001
+        Re = self.getReynoldsNumber(i)
+        if self.frfaccorel == 'blasius': #Not Validated
+            return 0.186 * Re**(-0.2)
+        if self.frfaccorel == 'Churchill': #Not Validated
+            Ra = 0.4 * (10**(-6)) #Roughness
+            R = Ra / self.D_h
+            frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   
+            return frict
+        
+    def getPhi2Phi(self, i):
+        x_th = self.xThTEMP[i]
+        rho_l = self.rholTEMP[i]
+        rho_g = self.rhogTEMP[i]
+        rho = self.rhoTEMP[i]
+        P = self.P[i]
+        epsilon = self.voidFractionTEMP[i]
+
+        if self.P2Pcorel == 'base': #Validated
+            phi2phi = 1 + 3*epsilon
+        elif self.P2Pcorel == 'HEM1': #Validated
+            phi2phi = (rho/rho_l)*((rho_l/rho_g)*x_th + +1)
+        elif self.P2Pcorel == 'HEM2': #Validated
+            m = IAPWS97(P = P*(10**(-6)), x = 0).mu / IAPWS97(P = P*(10**(-6)), x = 1).mu
+            phi2phi = (rho/rho_l)*((m-1)*x_th + 1)*((rho_l/rho_g)*x_th + +1)**(0.25)
+        elif self.P2Pcorel == 'MNmodel': #Validated
+            phi2phi = (1.2 * (rho_l/rho_g -1)*x_th**(0.824) + 1)*(rho/rho_l)
+        return phi2phi
+    
+    def getAreas(self, i):
+        A_chap_pos = self.flowArea +  (self.getPhi2Phi(i)/2) * ((self.fTEMP[i] / self.D_h) + (self.K_loss / self.Dz)) * self.DV
+        A_chap_neg = self.flowArea - (self.getPhi2Phi(i)/2) * ((self.fTEMP[i] / self.D_h) + (self.K_loss / self.Dz)) * self.DV
+        return A_chap_pos, A_chap_neg
+
+    def getPhasesEnthalpy(self, i):
+        P = self.P[i]
+        print(self.P)
+        vapor = IAPWS97(P = P*(10**(-6)), x = 1)
+        liquid = IAPWS97(P = P*(10**(-6)), x = 0)
+        return liquid.h, vapor.h
+    
+    def getReynoldsNumber(self, i):
+        U = self.U[i]
+        rho = self.rhoTEMP[i]
+        P = self.P[i]
+
+        m = IAPWS97(P = P*(10**(-6)), x = 0).mu
+        return rho * abs(U) * self.D_h / m
+    
+

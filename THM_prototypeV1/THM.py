@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 class Version5_THM_prototype:
     def __init__(self, case_name, 
                  canal_radius, canal_type, fuel_rod_length, hInlet, pOutlet, Q_flow, I_z, Qfiss, Qfiss_variation_type, 
-                 fuel_radius, gap_radius, clad_radius, k_fuel, H_gap, k_clad, I_f, I_c, plot_at_z,
+                 fuel_radius, gap_radius, clad_radius, k_fuel, H_gap, k_clad, I_f, I_c, plot_at_z, solveConduction,
                  dt, t_tot):
         """
         Main constructor for THM case, first set of parameters correspond to canal properties, second set to fuel/gap/clad properties
@@ -54,7 +54,10 @@ class Version5_THM_prototype:
         self.I_f = I_f # number of mesh elements in the fuel
         self.I_c = I_c # number of mesh elements in clad
 
+        Poro = 0.5655077285
+
         self.plot_results = plot_at_z
+        self.solveConduction = solveConduction
 
         print(f"$$$---------- THM: prototype, case treated : {self.name}.")
         if self.dt == 0 :
@@ -73,7 +76,7 @@ class Version5_THM_prototype:
             print(f'self.r_f: {self.r_f}')
             print(f'self.clad_r: {self.clad_r}')
             print(f'self.r_w: {self.r_w}')
-            self.convection_sol = DFMclass(self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', 'base', 'base', 'GEramp')
+            self.convection_sol = DFMclass(self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', 'base', 'base', 'ModBestion')
                         #  nCells, tInlet, pInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, waterGap,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
                     
             self.convection_sol.set_Fission_Power(self.Q_fiss_amp, self.Q_fiss_variation_type, 0, self.Lf)
@@ -85,39 +88,19 @@ class Version5_THM_prototype:
             print(f'Temperature at the surface: {Tsurf} K')
             print(f'Temperature of water: {self.convection_sol.T_water} K')
 
-            # Prepare and solve 1D radial heat conduction in the fuel rod, given a Clad surface temperature as a bondary condition 
-            self.SetupAndSolve_Conduction_at_all_z() # creates a list of Temperature distributions in the fuel rod given a surface temperature computed by solving the conection problem
-            self.get_TFuel_rowlands() # compute and store in the T_eff_fuel attribute the effective fuel temperature given by the Rowlands formula
-            self.get_Tfuel_surface() # store in the T_fuel_surface attribute the fuel surface temperature computed
+            if self.solveConduction:
+                # Prepare and solve 1D radial heat conduction in the fuel rod, given a Clad surface temperature as a bondary condition 
+                self.SetupAndSolve_Conduction_at_all_z() # creates a list of Temperature distributions in the fuel rod given a surface temperature computed by solving the conection problem
+                self.get_TFuel_rowlands() # compute and store in the T_eff_fuel attribute the effective fuel temperature given by the Rowlands formula
+                self.get_Tfuel_surface() # store in the T_fuel_surface attribute the fuel surface temperature computed
 
-            # extend to Twater : adding a mesh point corresponding to the middle of the canal in the plotting array, add rw to the bounds array and add Twater to the results array
-            for index_z in range(len(self.convection_sol.z_mesh)):
-                self.T_distributions_axial[index_z].extend_to_canal_visu(rw = self.convection_sol.wall_dist, Tw = self.convection_sol.T_water[index_z])
-            
-            if self.plot_results:
-                for z_val in self.plot_results:
-                    self.plot_Temperature_at_z(z_val)
-        """ else:
-            self.transient = True
-            print("$$$---------- THM: prototype, transient case.")
-            print("Warning : only single phase flow treated in this implementation of heat convection in coolant canal.")
-            self.set_transitoire(t_tot, self.T_in, dt)
-            self.convection_sol = FVM_Canal_MONO(self.Lf, self.T_in, self.Q_flow, self.P_cool, self.I_z, self.canal_type, 
-                                            self.r_f, self.clad_r, self.r_w)
-            self.convection_sol.set_Fission_Power(self.Q_fiss_amp, self.Q_fiss_variation_type)
-            self.setADI_CL_convection(self.transient)
-            self.T = np.zeros((self.N_temps+1, self.convection_sol.nCells))
-            self.T[0] = self.convection_sol.T_surf
-            for i in range(self.N_temps):
-                self.convection_sol.h_z = self.convection_sol.solve_h_in_canal()
-                self.T[i+1] = self.convection_sol.compute_T_surf()
-                self.SetupAndSolve_Conduction_at_all_z(self.transient)
-                self.get_TFuel_rowlands()
-                self.get_Tfuel_surface()
-            if self.plot_results:
-                for z_val in self.plot_results:
-                    self.plot_Temperature_at_z(z_val)
-        return """
+                # extend to Twater : adding a mesh point corresponding to the middle of the canal in the plotting array, add rw to the bounds array and add Twater to the results array
+                for index_z in range(len(self.convection_sol.z_mesh)):
+                    self.T_distributions_axial[index_z].extend_to_canal_visu(rw = self.convection_sol.wall_dist, Tw = self.convection_sol.T_water[index_z])
+                
+                if self.plot_results:
+                    for z_val in self.plot_results:
+                        self.plot_Temperature_at_z(z_val)
     
     def set_transitoire(self, t_tot, Tini, dt):
         self.t_tot, self.dt = t_tot, dt           
@@ -198,6 +181,7 @@ class Version5_THM_prototype:
             T_eff_z = self.T_distributions_axial[i].T_eff
             self.T_eff_fuel[i] = T_eff_z
         return
+    
     def get_Tfuel_surface(self):
         self.T_fuel_surface = np.zeros(self.convection_sol.nCells)
         for i in range(len(self.T_distributions_axial)):
@@ -380,22 +364,31 @@ class Version5_THM_prototype:
 
 
     def get_nuclear_parameters(self):
-        print(f'Tfuel : {self.T_eff_fuel} K')
-        print(f'Twater : {self.convection_sol.T_water} K')
-        print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
-        print(f'Water density: {self.convection_sol.rho[-1]} kg/m^3')
+        if self.solveConduction:
+            print(f'Tfuel : {self.T_eff_fuel} K')
+            print(f'Twater : {self.convection_sol.T_water} K')
+            print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
+            print(f'Water density: {self.convection_sol.rho[-1]} kg/m^3')
+            
+            return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1], self.convection_sol.rho[-1]
         
-        return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1], self.convection_sol.rho[-1]
-    
+        else: 
+            print(f'Twater : {self.convection_sol.T_water} K')
+            print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
+            print(f'Water density: {self.convection_sol.rho[-1]} kg/m^3')
+            
+            return [0], self.convection_sol.T_water, self.convection_sol.voidFraction[-1], self.convection_sol.rho[-1]
+
     def plotThermohydraulicParameters(self, visuParam):
         
         if visuParam[0]:
             fig1, ax1 = plt.subplots()
-            ax1.plot(self.convection_sol.z_mesh, self.T_eff_fuel, label="Fuel temperature")
+            if self.solveConduction:
+                ax1.plot(self.convection_sol.z_mesh, self.T_eff_fuel, label="Fuel temperature")
             ax1.plot(self.convection_sol.z_mesh, self.convection_sol.T_water, label="Coolant temperature")
             ax1.set_xlabel("Axial position in m")
             ax1.set_ylabel("Temperature in K")
-            ax1.set_title("Temperature distribution in fuel rod")
+            ax1.set_title("Temperature distribution ipincell")
             ax1.legend(loc="best")
 
         if visuParam[1]:
