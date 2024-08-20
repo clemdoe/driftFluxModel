@@ -61,7 +61,7 @@ if compute_case_GF12223:
     print(f"case 1 T_water is {case1.convection_sol.T_water} K")
     print(f"case 1 Hc is {0.5*(case1.convection_sol.Hc[3]+case1.convection_sol.Hc[4])} W/m^2/K")
     print(f"q_fluid1 = {case1.convection_sol.q__}")
-
+    
     print(f"case 1 A_canal = {case1.convection_sol.flowArea} m^2")
     print(f"case 1 T_surf is {case1.convection_sol.T_surf} K")
 
