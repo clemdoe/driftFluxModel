@@ -128,11 +128,3 @@ class THM_DONJON_parser:
         return T,val[:,list_z.index(x)]
     
 
-donjon = THM_DONJON_parser("BWR/driftFluxModel/THM_Comparaison/thm_genfoam_comp.result", 0, 0, 0, 20, 0.2)
-print(donjon.TCOOL)
-
-z = np.linspace(0, 0.2, 20)
-TCOOL = [donjon.TCOOL[0][-(i+1)] for i in range(len(donjon.TCOOL[0]))]
-print(z, TCOOL)
-plt.plot(z, TCOOL)
-plt.show()
