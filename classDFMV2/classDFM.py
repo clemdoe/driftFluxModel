@@ -500,7 +500,7 @@ class DFMclass():
         Re = self.getReynoldsNumber(i)
         if self.frfaccorel == 'blasius': #Not Validated
             return 0.00003
-            return 0.186 * Re**(-0.2)
+            #return 0.186 * Re**(-0.2)
         if self.frfaccorel == 'Churchill': #Not Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h

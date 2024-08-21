@@ -5,6 +5,7 @@
 from THM import Version5_THM_prototype
 from iapws import IAPWS97
 import numpy as np
+from THM import plotting
 # Begining of the script used to test the THM prototype class.
 compute_case_GF12223 = True
 
@@ -53,9 +54,14 @@ if compute_case_GF12223:
     P_inlet = 14.9 * (10**6) #Pa
     hInlet = IAPWS97(T = T_in1, P = P_inlet * 10**(-6)).h * 1000 #J/kg
     pOutlet = 14739394.95 
+
+    #Correlation used:
+    voidFractionCorrel = "EPRIvoidModel"
     
     case1 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
                                 fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0)
+    case2 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
+                                fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel="EPRIvoidModel")
 
     print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
     print(f"case 1 T_water is {case1.convection_sol.T_water} K")
@@ -73,4 +79,9 @@ if compute_case_GF12223:
     case1.get_nuclear_parameters()
     if solveConduction:
         case1.plotColorMap()
-    case1.plotThermohydraulicParameters([True, True, True, True, True])
+
+    #case1.plotThermohydraulicParameters([True, True, True, True, True, True])
+    #case2.plotThermohydraulicParameters([True, True, True, True, True, True])
+
+    plotter = plotting([case1, case2])
+    plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
