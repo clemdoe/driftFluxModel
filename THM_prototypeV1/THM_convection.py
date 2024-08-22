@@ -513,13 +513,15 @@ class statesVariables():
             rho_l = self.rholTEMP[i]
             rho_g = self.rhogTEMP[i]
             u = self.U[i]
-            V_gj = self.VgjPrimeTEMP[i]
+            V_gj = self.VgjTEMP[i]
             C0 = self.C0TEMP[i]
             if x_th == 0:
                 return 0.0001
             elif x_th == 1:
                 return 0.99
             else:
+                print(f'in getVoidFraction: x_th: {x_th}, C0: {C0}, rho_g: {rho_g}, rho_l: {rho_l}, V_gj: {V_gj}, u: {u}')
+                print(f'in get VoidFracion, eps: {x_th / (C0 * (x_th + (rho_g / rho_l) * (1 - x_th)) + (rho_g * V_gj) / (rho_l * u))}')
                 return x_th / (C0 * (x_th + (rho_g / rho_l) * (1 - x_th)) + (rho_g * V_gj) / (rho_l * u))
     
     def getVgj(self, i):
@@ -554,6 +556,7 @@ class statesVariables():
                 return 0
             sigma = IAPWS97(P = self.P[i]*(10**(-6)), x = 0).sigma
             Vgj = (np.sqrt(2)*(self.g * sigma * (self.rholTEMP[i] - self.rhogTEMP[i]) / self.rholTEMP[i]**2)**0.25) * (1 + self.voidFractionTEMP[i])**(3/2)
+            print(f'in getVgj EPRIvoidModel: {Vgj}, sigma: {sigma}')
             return Vgj
         
         if self.voidFractionCorrel == 'HEM1':
@@ -586,16 +589,15 @@ class statesVariables():
         if self.voidFractionCorrel == 'EPRIvoidModel':
             rho_g = self.rhogTEMP[i]
             rho_l = self.rholTEMP[i]
-            Pc = IAPWS97(P = self.P[i]*(10**(-6)), h = self.H[i]*(10**(-3)), x = 1).P*1000000 * 0.000145038
-            P = self.P[i] * 0.000145038
+            Pc = 22060000
+            P = self.P[i]
             print(f"Pc: {Pc}, P: {P}")
             Re = self.getReynoldsNumber(i)
             C1 = (4 * Pc**2)/(P*(Pc - P))
             k1 = min(0.8, 1/(1 + np.exp(-Re /60000)))
             k0 = k1 + (1-k1) * (rho_g / rho_l)**2
             r = (1+1.57*(rho_g/rho_l))/(1-k1)
-            print(f"r: {r}")
-            C0 = ((k0 + (1 - k0) * (self.voidFractionTEMP[i]**r))**(-1)) * ((1 - np.exp(-C1 * self.voidFractionTEMP[i]))/(1 - np.exp(-C1)))
+            C0 = (((k0 + (1 - k0) * (self.voidFractionTEMP[i]**r))**(-1)) * ((1 - np.exp(-C1 * self.voidFractionTEMP[i]))/(1 - np.exp(-C1))))
             return C0
 
         if self.voidFractionCorrel == 'HEM1':
@@ -666,5 +668,4 @@ class statesVariables():
 
         m = IAPWS97(P = P*(10**(-6)), x = 0).mu
         return rho * abs(U) * self.D_h / m
-    
 

@@ -470,7 +470,7 @@ class plotting:
                 ax4.set_xlabel("Axial position in m")
                 ax4.set_ylabel("Pressure in Pa")
                 ax4.set_title("Pressure distribution in coolant canal")
-                ax3.legend(loc="best")
+                ax4.legend(loc="best")
 
             if visuParam[4]:
                 fig5, ax5 = plt.subplots()
@@ -479,7 +479,7 @@ class plotting:
                 ax5.set_xlabel("Axial position in m")
                 ax5.set_ylabel("Velocity in m/s")
                 ax5.set_title("Velocity distribution in coolant canal")
-                ax3.legend(loc="best")
+                ax5.legend(loc="best")
 
             plt.show()
     
@@ -487,3 +487,57 @@ class plotting:
             pass
         elif compParam == 'P2Pcorel':
             pass
+
+    def GenFoamComp(self, genfoamCASE, compParam, visuParam):
+        if compParam == 'voidFractionCorrel':
+            if visuParam[0]:
+                fig1, ax1 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.T_water, label=self.caseList[i].voidFractionCorrel)
+                ax1.plot(genfoamCASE[0], genfoamCASE[1], label="GenFoam")
+                ax1.set_xlabel("Axial position in m")
+                ax1.set_ylabel("Temperature in K")
+                ax1.set_title("Temperature distribution in pincell")
+                ax1.legend(loc="best")
+
+            if visuParam[1]:
+                fig2, ax2 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax2.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.voidFraction[-1], label=self.caseList[i].voidFractionCorrel)
+                ax2.plot(genfoamCASE[0], genfoamCASE[2], label="GenFoam")
+                ax2.set_xlabel("Axial position in m")
+                ax2.set_ylabel("Void fraction")
+                ax2.set_title("Void fraction distribution in coolant canal")
+                ax2.legend(loc="best")
+
+            if visuParam[2]:
+                fig3, ax3 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax3.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.rho[-1], label=self.caseList[i].voidFractionCorrel)
+                ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
+                ax3.set_xlabel("Axial position in m")
+                ax3.set_ylabel("Density in kg/m^3")
+                ax3.set_title("Density distribution in coolant canal")
+                ax3.legend(loc="best")
+
+            if visuParam[3]:
+                fig4, ax4 = plt.subplots() 
+                for i in range(len(self.caseList)):
+                    ax4.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.P[-1], label=self.caseList[i].voidFractionCorrel)
+                ax4.plot(genfoamCASE[0], genfoamCASE[4], label="GenFoam")
+                ax4.set_xlabel("Axial position in m")
+                ax4.set_ylabel("Pressure in Pa")
+                ax4.set_title("Pressure distribution in coolant canal")
+                ax4.legend(loc="best")
+
+            if visuParam[4]:
+                fig5, ax5 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax5.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.U[-1], label=self.caseList[i].voidFractionCorrel)
+                ax5.plot(genfoamCASE[0], genfoamCASE[5], label="GenFoam")
+                ax5.set_xlabel("Axial position in m")
+                ax5.set_ylabel("Velocity in m/s")
+                ax5.set_title("Velocity distribution in coolant canal")
+                ax5.legend(loc="best")
+
+            plt.show()
