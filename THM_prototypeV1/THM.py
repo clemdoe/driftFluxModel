@@ -488,7 +488,21 @@ class plotting:
         elif compParam == 'P2Pcorel':
             pass
 
-    def GenFoamComp(self, genfoamCASE, compParam, visuParam):
+    def GenFoamComp(self, GenFoamPathCase, compParam, visuParam):
+
+        # Read the Excel file
+        df = pd.read_excel(GenFoamPathCase)
+
+        # Create empty lists for each column
+        columns = df.columns.tolist()
+        data = [[] for _ in columns]
+
+        # Iterate over each row and append values to the corresponding list
+        for index, row in df.iterrows():
+            for i, col in enumerate(columns):
+                data[i].append(row[col])
+
+        genfoamCASE = [data[0], data[3], data[2], data[3], data[1], data[5]]
         if compParam == 'voidFractionCorrel':
             if visuParam[0]:
                 fig1, ax1 = plt.subplots()
