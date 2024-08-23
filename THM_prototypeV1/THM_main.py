@@ -156,6 +156,6 @@ if compute_case_12223:
     #case1.plotThermohydraulicParameters([True, True, True, True, True, True])
     
     plotter = plotting([case1])#, case2, case3, case4])
-    plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
-    #plotter.GenFoamComp("BWR\driftFluxModel\THM_prototypeV1\Firstopenfoam.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True])
+    #plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
+    plotter.GenFoamComp("BWR\driftFluxModel\THM_prototypeV1\OECD_EX1_12223.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True])
 
