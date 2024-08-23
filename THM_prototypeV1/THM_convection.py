@@ -33,10 +33,13 @@ class DFMclass():
         self.flowArea = self.cote ** 2
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         self.D_h = self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
+        self.D_h = 0.0078395462
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18
         self.K_loss = 0
+
+        print(f"D_h: {self.D_h}, DV: {self.DV}, Dz: {self.Dz}")
 
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
@@ -111,8 +114,6 @@ class DFMclass():
         self.Vgj = [updateVariables.VgjTEMP]
         self.C0 =[updateVariables.C0TEMP]
         self.VgjPrime = [updateVariables.VgjPrimeTEMP]
-
-        print(f'self.xTh: {self.xTh}, \n self.rhoL: {self.rhoL},\n  self.rhoG: {self.rhoG}, \n self.rho: {self.rho}, \n self.Dhfg: {self.Dhfg}, \n self.f: {self.f}, \n self.areaMatrix_1: {self.areaMatrix_1}, \n self.areaMatrix_2: {self.areaMatrix_2},\n  self.areaMatrix: {self.areaMatrix},\n  self.Vgj: {self.Vgj},\n  self.C0: {self.C0},\n  self.VgjPrime: {self.VgjPrime}')
 
     def resolveMVF(self):
             
@@ -276,20 +277,23 @@ class DFMclass():
             elif k == self.maxOuterIteration - 1:
                 print('Convergence not reached')
                 break
+        
+        self.T_water = np.zeros(self.nCells)
+        for i in range(self.nCells):
+            self.T_water[i] = IAPWS97(P=self.P[-1][i]*10**-6, h=self.H[-1][i]*10**-3).T
 
     def compute_T_surf(self):
         self.Pfin = self.P[-1]
         self.h_z = self.H[-1]
         self.T_surf = np.zeros(self.nCells)
         self.Hc = np.zeros(self.nCells)
-        self.T_water = np.zeros(self.nCells)
         for i in range(self.nCells):
+            print(f'At axial slice = {i}, Pfin = {self.Pfin[i]}, h_z = {self.h_z[i]}')
             Pr_number = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.Prandt
             Re_number = self.getReynoldsNumber(i)
             k_fluid = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.k
             print(f"At axial slice = {i}, computed Reynold # = {Re_number}, computed Prandt # = {Pr_number}, k_fluid = {k_fluid}")
             self.Hc[i] = (0.023)*(Pr_number)**0.4*(Re_number)**0.8*k_fluid/self.D_h
-            self.T_water[i] = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).T
             print(f'self.Hc[i]: {self.Hc[i]}, \n self.q__[i]: {self.q__[i]} ,\n 2*np.pi*self.cladRadius: {2*np.pi*self.cladRadius}')
             self.T_surf[i] = ((self.q__[i]*self.flowArea)/(2*np.pi*self.cladRadius)/self.Hc[i]+self.T_water[i])
     
@@ -487,8 +491,8 @@ class statesVariables():
         return rho_l, rho_g, rho
     
     def getQuality(self, i):
-        H = self.H[i]
         hl, hg = self.getPhasesEnthalpy(i)
+        H = self.H[i]
         if H*0.001 < hl:
             return 0
         elif H*0.001 > hg:
@@ -520,8 +524,6 @@ class statesVariables():
             elif x_th == 1:
                 return 0.99
             else:
-                print(f'in getVoidFraction: x_th: {x_th}, C0: {C0}, rho_g: {rho_g}, rho_l: {rho_l}, V_gj: {V_gj}, u: {u}')
-                print(f'in get VoidFracion, eps: {x_th / (C0 * (x_th + (rho_g / rho_l) * (1 - x_th)) + (rho_g * V_gj) / (rho_l * u))}')
                 return x_th / (C0 * (x_th + (rho_g / rho_l) * (1 - x_th)) + (rho_g * V_gj) / (rho_l * u))
     
     def getVgj(self, i):
@@ -556,7 +558,6 @@ class statesVariables():
                 return 0
             sigma = IAPWS97(P = self.P[i]*(10**(-6)), x = 0).sigma
             Vgj = (np.sqrt(2)*(self.g * sigma * (self.rholTEMP[i] - self.rhogTEMP[i]) / self.rholTEMP[i]**2)**0.25) * (1 + self.voidFractionTEMP[i])**(3/2)
-            print(f'in getVgj EPRIvoidModel: {Vgj}, sigma: {sigma}')
             return Vgj
         
         if self.voidFractionCorrel == 'HEM1':
@@ -591,7 +592,6 @@ class statesVariables():
             rho_l = self.rholTEMP[i]
             Pc = 22060000
             P = self.P[i]
-            print(f"Pc: {Pc}, P: {P}")
             Re = self.getReynoldsNumber(i)
             C1 = (4 * Pc**2)/(P*(Pc - P))
             k1 = min(0.8, 1/(1 + np.exp(-Re /60000)))
