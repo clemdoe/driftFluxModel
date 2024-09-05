@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from FVM import FVM
 
 class DFMclass():
-    def __init__(self, nCells, hInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
+    def __init__(self, canal_type, nCells, hInlet, uInlet, pOutlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel):
         
         self.nCells = nCells
         self.uInlet = uInlet
@@ -20,26 +20,27 @@ class DFMclass():
         self.fuelRadius = fuelRadius #External radius of the fuel m
         self.cladRadius = cladRadius #External radius of the clad m
         self.cote = cote
-        self.wall_dist = cote/2
-        self.canalType = 'square'
+        self.wall_dist = cote
+        self.canalType = canal_type
 
         if self.canalType == 'square':
             self.flowArea = self.cote ** 2
-        elif self.canalType == 'circular':
+        elif self.canalType == 'cylindrical':
             self.waterGap = self.cote #Gap between the clad and the water m
             self.waterRadius =  self.cladRadius + self.waterGap #External radius of the water m
             self.flowArea = np.pi * self.waterRadius ** 2
 
         self.flowArea = self.cote ** 2
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
-        self.D_h = self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
+        print(f'flowArea: {self.flowArea}, self.cladRadius: {cladRadius}')
+        self.D_h_fake = 4 * self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
         self.D_h = 0.0078395462
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18
         self.K_loss = 0
 
-        print(f"D_h: {self.D_h}, DV: {self.DV}, Dz: {self.Dz}")
+        print(f"D_h: {self.D_h}, D_h_fake: {self.D_h_fake}, DV: {self.DV}, Dz: {self.Dz}")
 
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
@@ -69,23 +70,11 @@ class DFMclass():
 
         self.hlSat = []
         self.hgSat = []
-     
-    def set_Fission_Power(self, Qmax, Qtype, startHeating, endHeating):
-        #Heating parameters
-        self.startHeating = startHeating
-        self.endHeating = endHeating
-        self.Q = []
-        for z in self.z_mesh:
-            if z >= self.startHeating and z <= self.endHeating: 
-                if Qtype == 'constant':
-                    self.Q.append(Qmax)
-                elif Qtype == 'sinusoidal':
-                    self.Q.append(Qmax*np.sin(z*np.pi/self.height)) #volumetric heat generation rate W/m3
-            else:
-                self.Q.append(0)
+    
+    def set_Fission_Power(self, Q):
         self.q__ = []
-        for i in range(len(self.Q)):
-            self.q__.append((np.pi * self.fuelRadius**2 * self.Q[i]) / self.flowArea) #W/m3
+        for i in range(len(Q)):
+            self.q__.append((np.pi * self.fuelRadius**2 * Q[i]) / self.flowArea) #W/m3
 
     def get_Fission_Power(self):
         """
@@ -280,6 +269,7 @@ class DFMclass():
         
         self.T_water = np.zeros(self.nCells)
         for i in range(self.nCells):
+            print(f'self.P : {self.P[-1][i]*10**-6}, self.H = {self.H[-1][i]*10**-3}')
             self.T_water[i] = IAPWS97(P=self.P[-1][i]*10**-6, h=self.H[-1][i]*10**-3).T
 
     def compute_T_surf(self):
@@ -325,10 +315,10 @@ class DFMclass():
         for i in range(self.nCells):
             self.hlSat.append(self.getPhasesEnthalpy(i)[0])
             self.hgSat.append(self.getPhasesEnthalpy(i)[1]) 
-""" 
+ 
     def getReynoldsNumber(self, i):
         return (self.U[-1][i] * self.D_h * self.rho[-1][i]) / IAPWS97(P=self.P[-1][i]*10**-6, x=0).Liquid.mu
-     """
+     
 
 class statesVariables():
     def __init__(self, U, P, H, voidFraction, D_h, flowarea, DV, voidFractionCorrel, frfaccorel, P2Pcorel):

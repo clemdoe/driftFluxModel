@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 class Version5_THM_prototype:
-    def __init__(self, case_name, 
-                 canal_radius, canal_type, fuel_rod_length, hInlet, pOutlet, Q_flow, I_z, Qfiss, Qfiss_variation_type, 
-                 fuel_radius, gap_radius, clad_radius, k_fuel, H_gap, k_clad, I_f, I_c, plot_at_z, solveConduction,
-                 dt, t_tot, startHeating, stopHeating, frfaccorel = 'base', P2Pcorel = 'base', voidFractionCorrel = 'GEramp'):
+    def __init__(self, case_name, canal_type,
+                 canal_radius, fuel_radius, gap_radius, clad_radius, fuel_rod_length, hInlet, pOutlet, Q_flow, Qfiss,
+                 k_fuel, H_gap, k_clad, I_z, I_f, I_c, plot_at_z, solveConduction,
+                 dt, t_tot, frfaccorel = 'base', P2Pcorel = 'base', voidFractionCorrel = 'GEramp'):
         """
         Main constructor for THM case, first set of parameters correspond to canal properties, second set to fuel/gap/clad properties
         The structure followed is : 
@@ -43,8 +43,7 @@ class Version5_THM_prototype:
         self.pOutlet =  pOutlet #Pa
         self.uInlet = self.Q_flow / self.rhoInlet #m/s
 
-        self.Q_fiss_amp = Qfiss # amplitude of sine variation, or constant value if Qfiss_variation_type = "constant"
-        self.Q_fiss_variation_type = Qfiss_variation_type # allows for a sine / cosine axial variation of the fuel power density in convection case.
+        self.Qfiss = Qfiss # amplitude of sine variation, or constant value if Qfiss_variation_type = "constant"
 
         self.r_f = fuel_radius # fuel pin radius in meters
         self.gap_r = gap_radius # gap radius in meters, used to determine mesh elements for constant surface discretization
@@ -59,16 +58,7 @@ class Version5_THM_prototype:
         self.P2Pcorel = P2Pcorel # pressure drop correlation
         self.voidFractionCorrel = voidFractionCorrel # void fraction correlation
 
-        if startHeating == 0:
-            self.startHeating = 0
-        else:
-            self.startHeating = startHeating
-        if stopHeating == 0:
-            self.stopHeating = 0
-        else:
-            self.stopHeating = stopHeating
-
-        Poro = 0.5655077285
+        #Poro = 0.5655077285
 
         self.plot_results = plot_at_z
         self.solveConduction = solveConduction
@@ -90,11 +80,10 @@ class Version5_THM_prototype:
             print(f'self.r_f: {self.r_f}')
             print(f'self.clad_r: {self.clad_r}')
             print(f'self.r_w: {self.r_w}')
-            self.convection_sol = DFMclass(self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel)
+            self.convection_sol = DFMclass(self.canal_type, self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel)
 
             # Set the fission power in the fuel rod
-            print(f'self.startHeating: {self.startHeating}, self.stopHeating: {self.stopHeating}')
-            self.convection_sol.set_Fission_Power(self.Q_fiss_amp, self.Q_fiss_variation_type, self.startHeating, self.stopHeating)
+            self.convection_sol.set_Fission_Power(self.Qfiss)
             # Resolve the DFM
             self.convection_sol.resolveDFM()
             print(f'Pressure: {self.convection_sol.P[-1]} Pa')
@@ -386,7 +375,7 @@ class Version5_THM_prototype:
             print(f'Water void fraction: {self.convection_sol.voidFraction[-1]} K')
             print(f'Water density: {self.convection_sol.rho[-1]} kg/m^3')
             
-            return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.voidFraction[-1], self.convection_sol.rho[-1]
+            return self.T_eff_fuel, self.convection_sol.T_water, self.convection_sol.rho[-1]
         
         else: 
             print(f'Twater : {self.convection_sol.T_water} K')
