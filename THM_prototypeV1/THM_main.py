@@ -19,7 +19,7 @@ compute_case_12223 = True
 
 if compute_case_imposedPower:
     #User choice:
-    solveConduction = False
+    solveConduction = True
     plot_at_z1 = [0.8]
 
     #Geometric parameters:
@@ -60,7 +60,7 @@ if compute_case_imposedPower:
     voidFractionCorrel = "HEM1"
     
     case1 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
-                                fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel= voidFractionCorrel)
+                                fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, startHeating = 0.1, stopHeating= Lf1, voidFractionCorrel= voidFractionCorrel)
     #case2 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
                                 #fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel="modBestion")
     #case3 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant",
@@ -120,7 +120,7 @@ if compute_case_12223:
     #Meshing parameters:
     I_f1 = 8
     I_c1 = 3
-    I_z1 = 30
+    I_z1 = 10
 
     #Thermohydraulic parameters:
     T_in1 = 592.75 # K
@@ -134,7 +134,7 @@ if compute_case_12223:
     voidFractionCorrel = "HEM1"
     
     case1 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
-                                fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, startHeating = 0.1, stopHeating= Lf1, voidFractionCorrel= voidFractionCorrel)
+                                fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, startHeating = 0.1, stopHeating= Lf1, frfaccorel = 'blasius', voidFractionCorrel = voidFractionCorrel)
 
     """ print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
     print(f"case 1 T_water is {case1.convection_sol.T_water} K")

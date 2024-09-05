@@ -325,10 +325,10 @@ class DFMclass():
         for i in range(self.nCells):
             self.hlSat.append(self.getPhasesEnthalpy(i)[0])
             self.hgSat.append(self.getPhasesEnthalpy(i)[1]) 
-
+""" 
     def getReynoldsNumber(self, i):
         return (self.U[-1][i] * self.D_h * self.rho[-1][i]) / IAPWS97(P=self.P[-1][i]*10**-6, x=0).Liquid.mu
-    
+     """
 
 class statesVariables():
     def __init__(self, U, P, H, voidFraction, D_h, flowarea, DV, voidFractionCorrel, frfaccorel, P2Pcorel):
@@ -665,7 +665,12 @@ class statesVariables():
         U = self.U[i]
         rho = self.rhoTEMP[i]
         P = self.P[i]
-
-        m = IAPWS97(P = P*(10**(-6)), x = 0).mu
+        alpha = self.voidFractionTEMP[i]
+        print(f'At axial slice = {i}, P = {P}')
+        ml = IAPWS97(P = P*(10**(-6)), x = 0).mu
+        mv = IAPWS97(P = P*(10**(-6)), x = 1).mu
+        m = (mv * ml) / ( ml * (1 - alpha) + mv * alpha )
+        
+        print(f'At axial slice = {i}, computed Reynold # = {rho * abs(U) * self.D_h / m}')
         return rho * abs(U) * self.D_h / m
 
