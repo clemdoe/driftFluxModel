@@ -44,6 +44,7 @@ if compute_case_imposedPower:
     #Nuclear parameters:
     Qmax = 5e8 # W/m^3
     Qtype = "constant"
+    
     #Meshing parameters:
     I_f1 = 8
     I_c1 = 3
