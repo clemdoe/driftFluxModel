@@ -172,8 +172,26 @@ class DFMclass():
                 self.C0 = [self.C0List[self.timeCount]]
                 self.VgjPrime = [self.VgjPrimeList[self.timeCount]]
 
+    def resolve(self):
 
-    def resolveMVF(self):
+        self.createSystem()
+
+        if self.numericalMethod == 'FVM':
+            U, P, H = self.resolveInversion()
+            return U, P, H
+        if self.numericalMethod == 'BiConjugateGradient':
+            U, P, H = self.resolveBiConjugateGradient()
+            return U, P, H
+
+    def resolveInversion(self):
+        VAR = self.FVM.resoudre_h()
+        U, P, H = self.splitVar(VAR)
+        return U, P, H
+
+    def resolveBiConjugateGradient(self):
+        pass
+
+    def createSystem(self):
             
         U_old = self.U[-1]
         P_old = self.P[-1]
@@ -277,10 +295,7 @@ class DFMclass():
                 bi = 0,
                 di =  self.q__[i%self.nCells] * self.DV + DI + DI2)
 
-        VAR = VAR_VFM_Class.resoudre_h()
-        U, P, H = self.splitVar(VAR)
-
-        return U, P, H
+        self.FVM = VAR_VFM_Class
 
     def resolveMVFTransient(self):
             
@@ -446,7 +461,7 @@ class DFMclass():
     
             for k in range(self.maxOuterIteration):
                 if self.numericalMethod == 'FVM':
-                    Utemp, Ptemp, Htemp = self.resolveMVF()
+                    Utemp, Ptemp, Htemp = self.resolve()
                     self.U.append(Utemp)
                     self.P.append(Ptemp)
                     self.H.append(Htemp)
