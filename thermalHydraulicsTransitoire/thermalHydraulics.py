@@ -24,12 +24,10 @@ class Version5_THM_prototype:
         Options to plot results can be activated giving an array of z values at which the results should be plotted.
         """
         self.name = case_name
-
         # time atributes to prepare for transient simulations
         self.t0 = 0
         self.dt = dt
         self.t_end = t_tot
-        self.timeList = np.arange(self.t0, self.t_end, self.dt)
 
         # canal attributes
 
@@ -44,8 +42,6 @@ class Version5_THM_prototype:
         self.rhoInlet = 1000
         self.pOutlet =  pOutlet #Pa
         self.uInlet = self.Q_flow / self.rhoInlet #m/s
-
-        self.dx = self.Lf / self.I_z # axial mesh size in m
 
         self.Qfiss = Qfiss # amplitude of sine variation, or constant value if Qfiss_variation_type = "constant"
 
@@ -67,78 +63,50 @@ class Version5_THM_prototype:
         self.plot_results = plot_at_z
         self.solveConduction = solveConduction
 
-        self.courantNumber = self.uInlet * self.dt / self.dx
-
         print(f"$$$---------- THM: prototype, case treated : {self.name}.")
         if self.dt == 0 :
             self.transient = False
             print("$$$---------- THM: prototype, steady state case.")
+        print("Warning : only single phase flow treated in this implementation of heat convection in coolant canal.")
 
-            # Prepare and solve 1D heat convection along the z direction in the canal.
-            print("$$---------- Calling DFM class.")
-            print(f"Setting up heat convection solution along the axial dimension. zmax = {self.Lf} m with {self.I_z} axial elements.")
-            # Create an object of the class DFMclass
-            print(f'self.I_z: {self.I_z}')
-            print(f'self.Q_flow: {self.Q_flow}')
-            print(f'self.pOutlet: {self.pOutlet}')
-            print(f'self.Lf: {self.Lf}')
-            print(f'self.r_f: {self.r_f}')
-            print(f'self.clad_r: {self.clad_r}')
-            print(f'self.r_w: {self.r_w}')
-            self.convection_sol = DFMclass(self.canal_type, self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel)
+        # Prepare and solve 1D heat convection along the z direction in the canal.
+        print("$$---------- Calling DFM class.")
+        print(f"Setting up heat convection solution along the axial dimension. zmax = {self.Lf} m with {self.I_z} axial elements.")
+        # Create an object of the class DFMclass
+        print(f'self.I_z: {self.I_z}')
+        print(f'self.Q_flow: {self.Q_flow}')
+        print(f'self.pOutlet: {self.pOutlet}')
+        print(f'self.Lf: {self.Lf}')
+        print(f'self.r_f: {self.r_f}')
+        print(f'self.clad_r: {self.clad_r}')
+        print(f'self.r_w: {self.r_w}')
+        print(f'Courant number: {self.uInlet*self.dt/(self.Lf/self.I_z)}')
+        self.convection_sol = DFMclass(self.canal_type, self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, dt = self.dt, t_tot = self.t_end)
 
-            # Set the fission power in the fuel rod
-            self.convection_sol.set_Fission_Power(self.Qfiss)
-            # Resolve the DFM
-            self.convection_sol.resolveDFM()
-            print(f'Pressure: {self.convection_sol.P[-1]} Pa')
-            print(f'Enthalpy: {self.convection_sol.H[-1]} J/kg')
-            if self.solveConduction:
-                Tsurf = self.convection_sol.compute_T_surf()
-                print(f'Temperature at the surface: {Tsurf} K')
-                print(f'Temperature of water: {self.convection_sol.T_water} K')
+        # Set the fission power in the fuel rod
+        self.convection_sol.set_Fission_Power(self.Qfiss)
+        # Resolve the DFM
+        self.convection_sol.resolveDFM()
+        print(f'Pressure: {self.convection_sol.P[-1]} Pa')
+        print(f'Enthalpy: {self.convection_sol.H[-1]} J/kg')
+        if self.solveConduction:
+            Tsurf = self.convection_sol.compute_T_surf()
+            print(f'Temperature at the surface: {Tsurf} K')
+            print(f'Temperature of water: {self.convection_sol.T_water} K')
 
-            if self.solveConduction:
-                # Prepare and solve 1D radial heat conduction in the fuel rod, given a Clad surface temperature as a bondary condition 
-                self.SetupAndSolve_Conduction_at_all_z() # creates a list of Temperature distributions in the fuel rod given a surface temperature computed by solving the conection problem
-                self.get_TFuel_rowlands() # compute and store in the T_eff_fuel attribute the effective fuel temperature given by the Rowlands formula
-                self.get_Tfuel_surface() # store in the T_fuel_surface attribute the fuel surface temperature computed
+        if self.solveConduction:
+            # Prepare and solve 1D radial heat conduction in the fuel rod, given a Clad surface temperature as a bondary condition 
+            self.SetupAndSolve_Conduction_at_all_z() # creates a list of Temperature distributions in the fuel rod given a surface temperature computed by solving the conection problem
+            self.get_TFuel_rowlands() # compute and store in the T_eff_fuel attribute the effective fuel temperature given by the Rowlands formula
+            self.get_Tfuel_surface() # store in the T_fuel_surface attribute the fuel surface temperature computed
 
-                # extend to Twater : adding a mesh point corresponding to the middle of the canal in the plotting array, add rw to the bounds array and add Twater to the results array
-                for index_z in range(len(self.convection_sol.z_mesh)):
-                    self.T_distributions_axial[index_z].extend_to_canal_visu(rw = self.convection_sol.wall_dist, Tw = self.convection_sol.T_water[index_z])
+            # extend to Twater : adding a mesh point corresponding to the middle of the canal in the plotting array, add rw to the bounds array and add Twater to the results array
+            for index_z in range(len(self.convection_sol.z_mesh)):
+                self.T_distributions_axial[index_z].extend_to_canal_visu(rw = self.convection_sol.wall_dist, Tw = self.convection_sol.T_water[index_z])
                 
-                if self.plot_results:
-                    for z_val in self.plot_results:
-                        self.plot_Temperature_at_z(z_val)
-
-
-        if self.dt != 0:
-            self.transient = True
-            print("$$$---------- THM: prototype, transient case.")
-            # Prepare and solve 1D heat convection along the z direction in the canal.
-            print("$$---------- Calling DFM class.")
-            print(f"Setting up heat convection solution along the axial dimension. zmax = {self.Lf} m with {self.I_z} axial elements.")
-            # Create an object of the class DFMclass
-            print(f'self.I_z: {self.I_z}')
-            print(f'self.Q_flow: {self.Q_flow}')
-            print(f'self.pOutlet: {self.pOutlet}')
-            print(f'self.Lf: {self.Lf}')
-            print(f'self.r_f: {self.r_f}')
-            print(f'self.clad_r: {self.clad_r}')
-            print(f'self.r_w: {self.r_w}')
-            print(f'self.dt: {self.dt}')
-            print(f'self.t_tot: {self.t_tot}')
-            print(f'Nombre de courant: {self.courantNumber}')
-            if self.courantNumber > 1:
-                print("Courant number is too high, the simulation will be unstable.")
-                break
-            elif self.courantNumber < 1:
-                print("Courant number is low enough, the simulation will be stable.")
-            
-            self.convection_sol = DFMclass(self.canal_type, self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, self.dt, self.t_tot)
-            for t in range(1, self.convection_sol.t_tot+1):
-
+            if self.plot_results:
+                for z_val in self.plot_results:
+                    self.plot_Temperature_at_z(z_val)
     
     def set_transitoire(self, t_tot, Tini, dt):
         self.t_tot, self.dt = t_tot, dt           
@@ -528,7 +496,6 @@ class plotting:
         elif compParam == 'P2Pcorel':
             pass
 
-    
     def GenFoamComp(self, GenFoamPathCase, compParam, visuParam):
 
         # Read the Excel file

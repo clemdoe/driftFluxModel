@@ -20,7 +20,7 @@ compute_case_12223 = False
 
 if compute_case_imposedPower:
     #User choice:
-    solveConduction = True
+    solveConduction = False
     plot_at_z1 = [0.8]
 
     #Geometric parameters:
@@ -69,22 +69,27 @@ if compute_case_imposedPower:
             Qfiss1.append(Qmax*np.sin(i*np.pi)) #volumetric heat generation rate W/m3
     
     case1 = Version5_THM_prototype("Testing THM Prototype", canal_type1, rw1, fuel_radius1, gap_rad1, clad_rad1, Lf1, hInlet, pOutlet, Q_flow1, Qfiss1,
-                                k_fuel1, H_gap1, k_clad1, I_z1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel= voidFractionCorrel)
+                                k_fuel1, H_gap1, k_clad1, I_z1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel= voidFractionCorrel, frfaccorel = 'base')
+    case2 = Version5_THM_prototype("Testing THM Prototype", canal_type1, rw1, fuel_radius1, gap_rad1, clad_rad1, Lf1, hInlet, pOutlet, Q_flow1, Qfiss1,
+                                k_fuel1, H_gap1, k_clad1, I_z1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel= voidFractionCorrel, frfaccorel = 'blasius')
+    case3 = Version5_THM_prototype("Testing THM Prototype", canal_type1, rw1, fuel_radius1, gap_rad1, clad_rad1, Lf1, hInlet, pOutlet, Q_flow1, Qfiss1,
+                                k_fuel1, H_gap1, k_clad1, I_z1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel= voidFractionCorrel, frfaccorel = 'Churchill')
     #case2 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
                                 #fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel="modBestion")
     #case3 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant",
                                 #fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel="HEM1")
     #case4 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant",
                                 #fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, voidFractionCorrel="GEramp")
-    print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
+    #print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
     print(f"case 1 T_water is {case1.convection_sol.T_water} K")
-    print(f"case 1 Hc is {0.5*(case1.convection_sol.Hc[3]+case1.convection_sol.Hc[4])} W/m^2/K")
     print(f"q_fluid1 = {case1.convection_sol.q__}")
     
     print(f"case 1 A_canal = {case1.convection_sol.flowArea} m^2")
-    print(f"case 1 T_surf is {case1.convection_sol.T_surf} K")
-
+    
     if solveConduction:
+        print(f"case 1 Hc is {0.5*(case1.convection_sol.Hc[3]+case1.convection_sol.Hc[4])} W/m^2/K")
+        print(f"case 1 T_surf is {case1.convection_sol.T_surf} K")
+
         print(f"case 1 T_eff in fuel is {case1.T_eff_fuel} K")
         print(f"case 1 T_surf fuel is {case1.T_fuel_surface} K")
     #case1.compare_with_THM_DONJON("C:/Users/cleme/OneDrive/Documents/Poly/BWR/driftFluxModel/THM_prototypeDFM/pincell_mphy_thm_devoir.result",[True, True, True, True, True, True])
@@ -95,9 +100,9 @@ if compute_case_imposedPower:
 
     #case1.plotThermohydraulicParameters([True, True, True, True, True, True])
     
-    plotter = plotting([case1])#, case2, case3, case4])
-    #plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
-    plotter.GenFoamComp("BWR\driftFluxModel\THM_prototypeV1\Firstopenfoam.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True])
+    plotter = plotting([case1, case2, case3])#
+    plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
+    #plotter.GenFoamComp("BWR\driftFluxModel\hermalHydraulics\compOpenFoam.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True])
 
 
 if compute_case_12223_old:
@@ -144,7 +149,7 @@ if compute_case_12223_old:
     
     case1 = Version5_THM_prototype("Testing THM Prototype", rw1, canal_type1, Lf1, hInlet, pOutlet, Q_flow1, I_z1, Qfiss1, "constant", 
                                 fuel_radius1, gap_rad1, clad_rad1, k_fuel1, H_gap1, k_clad1, I_f1, I_c1, plot_at_z1, solveConduction, dt=0, t_tot=0, startHeating = 0.1, stopHeating= Lf1, frfaccorel = 'base', voidFractionCorrel = voidFractionCorrel)
-
+    
     """ print(f"case 1 h_z is {case1.convection_sol.h_z} J/kg")
     print(f"case 1 T_water is {case1.convection_sol.T_water} K")
     print(f"case 1 Hc is {0.5*(case1.convection_sol.Hc[3]+case1.convection_sol.Hc[4])} W/m^2/K")

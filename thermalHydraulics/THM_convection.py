@@ -33,14 +33,14 @@ class DFMclass():
         self.flowArea = self.cote ** 2
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         print(f'flowArea: {self.flowArea}, self.cladRadius: {cladRadius}')
-        self.D_h_fake = 4 * self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
+        self.D_h = 4 * self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
         self.D_h = 0.0078395462
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18
         self.K_loss = 0
 
-        print(f"D_h: {self.D_h}, D_h_fake: {self.D_h_fake}, DV: {self.DV}, Dz: {self.Dz}")
+        #print(f"D_h: {self.D_h}, D_h_fake: {self.D_h_fake}, DV: {self.DV}, Dz: {self.Dz}")
 
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
@@ -173,13 +173,13 @@ class DFMclass():
             elif i > self.nCells and i < 2*self.nCells-1:
                 DI = -((epsilon_old[i+1] * rho_g_old[i+1] * rho_l_old[i+1] * V_gj_old[i+1]**2 * areaMatrix[i+1] )/ ((1 - epsilon_old[i+1])*rho_old[i+1]) )  + ((epsilon_old[i] * rho_g_old[i] * rho_l_old[i] * V_gj_old[i]**2 * areaMatrix[i] )/ ((1 - epsilon_old[i])*rho_old[i]) )     
                 VAR_VFM_Class.set_ADi(i, ci = 0,
-                ai = - areaMatrix_old_2[i],
-                bi = areaMatrix_old_1[i+1],
+                ai = - areaMatrix[i],
+                bi = areaMatrix[i+1],
                 di = - ((rho_old[i+1]- rho_old[i])* self.g * self.DV / 2) + DI)
             
                 VAR_VFM_Class.fillingOutsideBoundary(i, i-self.nCells,
-                ai = - rho_old[i]*VAR_old[i-self.nCells]*areaMatrix[i],
-                bi = rho_old[i+1]*VAR_old[i+1-self.nCells]*areaMatrix[i+1])
+                ai = - rho_old[i]*VAR_old[i-self.nCells]*areaMatrix_old_2[i],
+                bi = rho_old[i+1]*VAR_old[i+1-self.nCells]*areaMatrix_old_1[i+1])
 
             elif i == 2*self.nCells - 1:
                 VAR_VFM_Class.set_ADi(i, 
@@ -278,13 +278,13 @@ class DFMclass():
         self.T_surf = np.zeros(self.nCells)
         self.Hc = np.zeros(self.nCells)
         for i in range(self.nCells):
-            print(f'At axial slice = {i}, Pfin = {self.Pfin[i]}, h_z = {self.h_z[i]}')
+            #print(f'At axial slice = {i}, Pfin = {self.Pfin[i]}, h_z = {self.h_z[i]}')
             Pr_number = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.Prandt
             Re_number = self.getReynoldsNumber(i)
             k_fluid = IAPWS97(P=self.Pfin[i]*10**-6, h=self.h_z[i]*10**-3).Liquid.k
-            print(f"At axial slice = {i}, computed Reynold # = {Re_number}, computed Prandt # = {Pr_number}, k_fluid = {k_fluid}")
+            #print(f"At axial slice = {i}, computed Reynold # = {Re_number}, computed Prandt # = {Pr_number}, k_fluid = {k_fluid}")
             self.Hc[i] = (0.023)*(Pr_number)**0.4*(Re_number)**0.8*k_fluid/self.D_h
-            print(f'self.Hc[i]: {self.Hc[i]}, \n self.q__[i]: {self.q__[i]} ,\n 2*np.pi*self.cladRadius: {2*np.pi*self.cladRadius}')
+            #print(f'self.Hc[i]: {self.Hc[i]}, \n self.q__[i]: {self.q__[i]} ,\n 2*np.pi*self.cladRadius: {2*np.pi*self.cladRadius}')
             self.T_surf[i] = ((self.q__[i]*self.flowArea)/(2*np.pi*self.cladRadius)/self.Hc[i]+self.T_water[i])
     
         return self.T_surf
@@ -610,15 +610,18 @@ class statesVariables():
         U = self.U[i]
         P = self.P[i]
 
-        if self.frfaccorel == 'base': #Validated
+        if self.frfaccorel == 'base': #Validated  
+            print(f'At axial slice = {i}, computed frict = {0.000033}') 
             return 0.000033
         Re = self.getReynoldsNumber(i)
-        if self.frfaccorel == 'blasius': #Not Validated
+        if self.frfaccorel == 'blasius': #Not Validated  
+            print(f'At axial slice = {i}, computed frict = {0.186 * Re**(-0.2)}') 
             return 0.186 * Re**(-0.2)
         if self.frfaccorel == 'Churchill': #Not Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h
-            frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   
+            frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)  
+            print(f'At axial slice = {i}, computed frict = {frict}') 
             return frict
         
     def getPhi2Phi(self, i):
@@ -656,11 +659,8 @@ class statesVariables():
         rho = self.rhoTEMP[i]
         P = self.P[i]
         alpha = self.voidFractionTEMP[i]
-        print(f'At axial slice = {i}, P = {P}')
         ml = IAPWS97(P = P*(10**(-6)), x = 0).mu
         mv = IAPWS97(P = P*(10**(-6)), x = 1).mu
         m = (mv * ml) / ( ml * (1 - alpha) + mv * alpha )
-        
-        print(f'At axial slice = {i}, computed Reynold # = {rho * abs(U) * self.D_h / m}')
         return rho * abs(U) * self.D_h / m
 
