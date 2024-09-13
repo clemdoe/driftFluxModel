@@ -280,7 +280,7 @@ if compute_case_transient:
     #Meshing parameters:
     I_f1 = 8
     I_c1 = 3
-    I_z1 = 30
+    I_z1 = 5
 
     #Thermohydraulic parameters:
     T_in1 = 602.75 # K

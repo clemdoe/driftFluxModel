@@ -72,7 +72,6 @@ class DFMclass():
         self.hlSat = []
         self.hgSat = []
 
-        
         #Transient parameters
         self.dt = dt
         if dt != 0:
@@ -173,26 +172,180 @@ class DFMclass():
                 self.VgjPrime = [self.VgjPrimeList[self.timeCount]]
 
     def resolve(self):
+        print(f'Inside resolve, Numerical method: {self.numericalMethod}')
 
         self.createSystem()
 
         if self.numericalMethod == 'FVM':
             U, P, H = self.resolveInversion()
             return U, P, H
-        if self.numericalMethod == 'BiConjugateGradient':
+        elif self.numericalMethod == 'BiConjugateGradient':
             U, P, H = self.resolveBiConjugateGradient()
+            return U, P, H
+        elif self.numericalMethod == 'GaussSiedel':
+            U, P, H = self.resolveGaussSiedel()
             return U, P, H
 
     def resolveInversion(self):
-        VAR = self.FVM.resoudre_h()
+        self.A = self.FVM.A
+        self.D = self.FVM.D
+        M = self.preconditionner(self.A)
+        VAR = np.linalg.solve(np.dot(np.linalg.inv(M),self.A), np.dot(np.linalg.inv(M),self.D))
         U, P, H = self.splitVar(VAR)
         return U, P, H
 
+    def resolveConjugateGradient(self):
+        tol = self.epsInnerIteration
+        x0 = np.ones(self.nCells*3)
+        A = self.FVM.A
+        b = self.FVM.D
+        r0 = b - np.dot(A,x0)
+        p0 = r0
+        for k in range(1000):
+            alpha = np.dot(r0, r0) / np.dot(np.dot(A,p0), p0)
+            x = x0 + alpha * p0
+            r = r0 - alpha * np.dot(A, p0)
+            if np.linalg.norm(r) < tol:
+                break
+            beta = np.dot(r, r) / np.dot(r0, r0)
+            p = r + beta * p0
+            r0 = r
+            p0 = p
+            x0 = x
+        U, P, H = self.splitVar(x)
+        return U, P, H
+    
+    def resolveGaussSiedel(self):
+
+        tol = self.epsInnerIteration
+        x0 = np.ones(self.nCells*3)
+        A = self.FVM.A
+        b = self.FVM.D
+
+        x = x0
+        n = len(x)
+        err0 = 0
+        Ax = np.zeros(n)
+        for i in range(n):
+            Ax[i] = np.dot(A[i, :], x)
+
+        for i in range(n):
+            err = b[i] - Ax[i]
+            err0 += err**2
+        err0 = np.sqrt(err0)
+
+        for m in range(1,1000):
+            esum = 0
+            for i in range(n):
+                x_old = x[i]
+                sum = 0
+                for j in range(n):
+                    if j != i:
+                        sum += A[i, j] * x[j]
+                x[i] = (b[i] - sum) / A[i, i]
+                esum += (x[i] - x_old)**2
+            
+            erout = np.sqrt(esum)
+            if np.sqrt(esum) <= tol:
+                break
+
+        U, P, H = self.splitVar(x)
+        return U,P,H
+    
+    def preconditionner(self, A):
+        m = 50
+        ILU = True
+        SPAI = False
+
+        if SPAI == True:
+            """Perform m step of the SPAI iteration."""
+            from scipy.sparse import identity
+            from scipy.sparse import diags
+            from scipy.sparse.linalg import onenormest
+            from scipy.sparse import csr_array
+            
+            n = A.shape[0]
+            A = csr_array(A)
+            ident = identity(n, format='csr')
+            alpha = 2 / onenormest(A @ A.T)
+            M = alpha * A
+                
+            for index in range(m):
+                C = A @ M
+                G = ident - C
+                AG = A @ G
+                trace = (G.T @ AG).diagonal().sum()
+                alpha = trace / np.linalg.norm(AG.data)**2
+                M = M + alpha * G
+            print(f'M inside preconditionner ILU: {M.todense()}')
+            return M.todense()
+        
+        if ILU == True:
+            n = A.shape[0]
+            #Initialize L and U as copies of A
+            L = np.eye(n)
+            U = np.copy(A)
+
+            #Perform ILU factorization
+            for i in range(1,n):
+                for k in range(i):
+                    if U[k,k] != 0.0:
+                        L[i,k] = U[i,k] / U[k,k]
+                        for j in range(k+1, n):
+                            U[i,j] = U[i,j] - L[i,k] * U[k,j]
+            print(f'M inside preconditionner SPAI: {np.dot(L,U)}')
+
+            return np.dot(L,U)
+
     def resolveBiConjugateGradient(self):
-        pass
+
+        M = self.preconditionner(self.FVM.A)
+        #print(f'M: {M}, \n A: {self.FVM.A}, \n M-1 * A: {np.dot(np.linalg.inv(M), self.FVM.A)}')
+        self.condNUMBERB = np.linalg.cond(self.FVM.A)
+        self.condNUMBER = np.linalg.cond(np.dot(np.linalg.inv(M), self.FVM.A))
+        print(f'CondNumber : self.condNUMBER: {self.condNUMBER}')
+        print(f'CondNumberOld : self.condNUMBERB: {self.condNUMBERB}')
+        
+        MStar = np.transpose(M)
+        tol = self.epsInnerIteration
+        x0 = np.ones(self.nCells*3)
+        A = self.FVM.A
+        b = self.FVM.D
+        AStar = np.transpose(A)
+
+        r0 = b - np.dot(A,x0)
+        r0Star = np.transpose(b) - np.dot(np.transpose(x0),AStar)
+        p0 = np.dot(MStar,r0)
+        p0Star = np.dot(r0Star, MStar)
+        x0Star = np.transpose(x0)
+        for k in range(1000):
+            alpha = np.dot(np.dot(r0Star,MStar), r0) / np.dot(np.dot(p0Star,A), p0)
+            alphaBar = np.conjugate(alpha)
+            x = x0 + alpha * p0
+            xStar  = x0Star + alphaBar * p0Star
+            r = r0 - alpha * np.dot(A, p0)
+            rStar = r0Star - alphaBar * np.dot(p0Star, AStar)
+            if np.linalg.norm(r) < tol:
+                break
+            if k == 999:
+                raise ValueError('BiConjugateGradient did not converge')
+            beta = np.dot(np.dot(rStar, MStar),r) / np.dot(np.dot(r0Star, MStar), r0)
+            betaBar = np.conjugate(beta)
+            p = np.dot(MStar,r) + beta * p0
+            pStar = np.dot(rStar, MStar) + betaBar * p0Star
+
+            r0 = r
+            r0Star = rStar
+            x0 = x
+            x0Star = xStar
+            p0 = p
+            p0Star = pStar
+
+        U, P, H = self.splitVar(x)
+        return U, P, H
 
     def createSystem(self):
-            
+        
         U_old = self.U[-1]
         P_old = self.P[-1]
         H_old = self.H[-1]
@@ -452,20 +605,40 @@ class DFMclass():
         self.pressureList[0,:] = self.pOutlet
         self.enthalpyList[0,:] = self.hInlet
 
+    def residualsVisu(self):
+        # Mise à jour des données de la ligne
+        self.line.set_xdata(self.I)
+        self.line.set_ydata(self.EPSresiduals)
 
+        # Ajuste les limites des axes si nécessaire
+        self.ax.relim()         # Recalcule les limites des données
+        self.ax.autoscale_view()  # Réajuste la vue automatiquement
+
+        # Dessine les modifications
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+    
+    
     def resolveDFM(self):
 
         if self.dt == 0:
 
             self.setInitialFields()
+            # Active le mode interactif
+            plt.ion()
+            # Crée la figure et l'axe
+            self.fig, self.ax = plt.subplots()
+            # Initialisation de la ligne qui sera mise à jour
+            self.line, = self.ax.plot(self.I, self.EPSresiduals, 'r-', marker='o')  # 'r-' pour une ligne rouge avec des marqueurs
+
     
             for k in range(self.maxOuterIteration):
-                if self.numericalMethod == 'FVM':
-                    Utemp, Ptemp, Htemp = self.resolve()
-                    self.U.append(Utemp)
-                    self.P.append(Ptemp)
-                    self.H.append(Htemp)
                 
+                Utemp, Ptemp, Htemp = self.resolve()
+                self.U.append(Utemp)
+                self.P.append(Ptemp)
+                self.H.append(Htemp)
+
                 updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
                 updateVariables.updateFields()
 
@@ -482,9 +655,11 @@ class DFMclass():
                 self.C0.append(updateVariables.C0TEMP)
                 self.VgjPrime.append(updateVariables.VgjPrimeTEMP)
 
-                self.sousRelaxation()
+                #self.sousRelaxation()
                 self.calculateResiduals()
                 self.I.append(k)
+                self.residualsVisu()
+
                 convergence = self.testConvergence(k)
 
                 if convergence == True:
@@ -493,6 +668,9 @@ class DFMclass():
                 elif k == self.maxOuterIteration - 1:
                     print('Convergence not reached')
                     break
+
+            plt.ioff()
+            plt.show()
 
         elif self.dt != 0:
 
