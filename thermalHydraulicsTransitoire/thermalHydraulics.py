@@ -81,7 +81,7 @@ class Version5_THM_prototype:
         print(f'self.clad_r: {self.clad_r}')
         print(f'self.r_w: {self.r_w}')
         print(f'Courant number: {self.uInlet*self.dt/(self.Lf/self.I_z)}')
-        self.convection_sol = DFMclass(self.canal_type, self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'BiConjugateGradient', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, dt = self.dt, t_tot = self.t_end)
+        self.convection_sol = DFMclass(self.canal_type, self.I_z, self.hInlet, self.uInlet, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'BiCStab', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, dt = self.dt, t_tot = self.t_end)
 
         # Set the fission power in the fuel rod
         self.convection_sol.set_Fission_Power(self.Qfiss)

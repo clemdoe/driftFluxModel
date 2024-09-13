@@ -45,7 +45,7 @@ class DFMclass():
 
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
-        self.sousRelaxFactor = 0.12
+        self.sousRelaxFactor = 0.15
         self.epsOuterIteration = 1e-3
         self.maxOuterIteration = 1000
 
@@ -59,6 +59,7 @@ class DFMclass():
         self.rhoGResiduals = []
         self.rhoLResiduals = []
         self.xThResiduals = []
+        self.UResiduals = []
         self.Iteration = []
         self.I = []
 
@@ -179,12 +180,20 @@ class DFMclass():
         if self.numericalMethod == 'FVM':
             U, P, H = self.resolveInversion()
             return U, P, H
-        elif self.numericalMethod == 'BiConjugateGradient':
-            U, P, H = self.resolveBiConjugateGradient()
+        elif self.numericalMethod == 'BiCStab':
+            U, P, H = self.resolveBiCGStab()
             return U, P, H
         elif self.numericalMethod == 'GaussSiedel':
             U, P, H = self.resolveGaussSiedel()
             return U, P, H
+        elif self.numericalMethod == 'BiCG':
+            U, P, H = self.resolveBiConjugateGradient()
+            return U, P, H
+        elif self.numericalMethod == 'ConjugateGradient':
+            U, P, H = self.resolveConjugateGradient()
+            return U, P, H
+        else:
+            raise ValueError('Numerical method not recognized')
 
     def resolveInversion(self):
         self.A = self.FVM.A
@@ -196,7 +205,7 @@ class DFMclass():
 
     def resolveConjugateGradient(self):
         tol = self.epsInnerIteration
-        x0 = np.ones(self.nCells*3)
+        x0 = self.mergeVar(self.U[-1], self.P[-1], self.H[-1])
         A = self.FVM.A
         b = self.FVM.D
         r0 = b - np.dot(A,x0)
@@ -216,11 +225,12 @@ class DFMclass():
         return U, P, H
     
     def resolveGaussSiedel(self):
-
+        M = self.preconditionner(self.FVM.A)
+        MStar = np.linalg.inv(M)
         tol = self.epsInnerIteration
         x0 = np.ones(self.nCells*3)
-        A = self.FVM.A
-        b = self.FVM.D
+        A = np.dot(MStar,self.FVM.A)
+        b = np.dot(MStar, self.FVM.D)
 
         x = x0
         n = len(x)
@@ -264,7 +274,7 @@ class DFMclass():
             from scipy.sparse.linalg import onenormest
             from scipy.sparse import csr_array
             
-            n = A.shape[0]
+            n = 3* self.nCells
             A = csr_array(A)
             ident = identity(n, format='csr')
             alpha = 2 / onenormest(A @ A.T)
@@ -281,7 +291,7 @@ class DFMclass():
             return M.todense()
         
         if ILU == True:
-            n = A.shape[0]
+            n = 3*self.nCells
             #Initialize L and U as copies of A
             L = np.eye(n)
             U = np.copy(A)
@@ -289,13 +299,12 @@ class DFMclass():
             #Perform ILU factorization
             for i in range(1,n):
                 for k in range(i):
-                    if U[k,k] != 0.0:
+                    if U[k,k] != 0:
                         L[i,k] = U[i,k] / U[k,k]
-                        for j in range(k+1, n):
-                            U[i,j] = U[i,j] - L[i,k] * U[k,j]
+                        U[i,k:] = U[i,k:] - L[i,k] * U[k,k:]
             print(f'M inside preconditionner SPAI: {np.dot(L,U)}')
 
-            return np.dot(L,U)
+            return L,U
 
     def resolveBiConjugateGradient(self):
 
@@ -306,7 +315,7 @@ class DFMclass():
         print(f'CondNumber : self.condNUMBER: {self.condNUMBER}')
         print(f'CondNumberOld : self.condNUMBERB: {self.condNUMBERB}')
         
-        MStar = np.transpose(M)
+        MStar = np.linalg.inv(M)
         tol = self.epsInnerIteration
         x0 = np.ones(self.nCells*3)
         A = self.FVM.A
@@ -344,6 +353,55 @@ class DFMclass():
         U, P, H = self.splitVar(x)
         return U, P, H
 
+    def scalBIC(self, a, b):
+        return np.dot(np.transpose(a), b)
+    
+    def resolveBiCGStab(self):
+        A = self.FVM.A
+        b = self.FVM.D
+        x0 = self.mergeVar(self.U[-1], self.P[-1], self.H[-1])
+        tol = self.epsInnerIteration
+
+        K1, K2 = self.preconditionner(A)
+        K1Star = np.linalg.inv(A)
+        K2Star = np.linalg.inv(A)
+
+        r0 = b - np.dot(A,x0)
+        r0Star = r0
+        rho0 = self.scalBIC(r0Star, r0)
+        p0 = r0
+
+        for k in range(1000):
+            y = K2Star @ K1Star @ p0
+            v = A @ y
+            alpha = rho0 / self.scalBIC(r0Star, v)
+            h = x0 + alpha * y
+            s = r0 - alpha * v
+            r = A @ h - b
+            if np.linalg.norm(r) < tol:
+                x = h
+                break
+            z = K2Star @ K1Star @ s
+            t = A @ z
+            omega = self.scalBIC(K1Star @ t, K1Star @ s) / self.scalBIC(K1Star @ t, K1Star @ t)
+            x = h + omega * z
+            r = s - omega * t
+            res = A @ x - b
+            if np.linalg.norm(res) < tol:
+                break
+            rho = self.scalBIC(r0Star, r)
+            beta = (rho / rho0) * (alpha / omega)
+            p = r + beta * (p0 - omega * v)
+            
+            rho0 = rho
+            r0 = r
+            x0 = x
+            p0 = p
+
+        print(f'end of resolveBiCGStab with k = {k}')
+        U, P, H = self.splitVar(x)
+        return U, P, H
+    
     def createSystem(self):
         
         U_old = self.U[-1]
@@ -562,15 +620,18 @@ class DFMclass():
 
 
     def calculateResiduals(self):#change les residus
-        self.EPSresiduals.append(np.linalg.norm(self.voidFraction[-1] - self.voidFraction[-2]))
+        #self.EPSresiduals.append(np.linalg.norm(self.voidFraction[-1] - self.voidFraction[-2]))
         self.rhoResiduals.append(np.linalg.norm(self.rho[-1] - self.rho[-2]))
-        self.rhoGResiduals.append(np.linalg.norm(self.rhoG[-1] - self.rhoG[-2]))
-        self.rhoLResiduals.append(np.linalg.norm(self.rhoL[-1] - self.rhoL[-2]))
-        self.xThResiduals.append(np.linalg.norm(self.xTh[-1] - self.xTh[-2]))
+        self.UResiduals.append(np.linalg.norm(self.U[-1] - self.U[-2]))
+        #self.rhoGResiduals.append(np.linalg.norm(self.rhoG[-1] - self.rhoG[-2]))
+        #self.rhoLResiduals.append(np.linalg.norm(self.rhoL[-1] - self.rhoL[-2]))
+        #self.xThResiduals.append(np.linalg.norm(self.xTh[-1] - self.xTh[-2]))
 
     def testConvergence(self, k):#change rien et return un boolean
-        print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
-        if self.EPSresiduals[-1] < 1e-3 and self.rhoGResiduals[-1] < 1e-3 and self.rhoLResiduals[-1] < 1e-3 and self.xThResiduals[-1] < 1e-3:
+        #print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
+        print(f'Convergence test: rho: {self.rhoResiduals[-1]}, U: {self.UResiduals[-1]}')
+        #if self.EPSresiduals[-1] < 1e-3 and self.rhoGResiduals[-1] < 1e-3 and self.rhoLResiduals[-1] < 1e-3 and self.xThResiduals[-1] < 1e-3:
+        if self.rhoResiduals[-1] < 1e-3 and self.UResiduals[-1] < 1e-3:
             print(f'Convergence reached at iteration number: {k}')
             return True
         else:
@@ -608,7 +669,7 @@ class DFMclass():
     def residualsVisu(self):
         # Mise à jour des données de la ligne
         self.line.set_xdata(self.I)
-        self.line.set_ydata(self.EPSresiduals)
+        self.line.set_ydata(self.rhoResiduals)
 
         # Ajuste les limites des axes si nécessaire
         self.ax.relim()         # Recalcule les limites des données
@@ -629,7 +690,7 @@ class DFMclass():
             # Crée la figure et l'axe
             self.fig, self.ax = plt.subplots()
             # Initialisation de la ligne qui sera mise à jour
-            self.line, = self.ax.plot(self.I, self.EPSresiduals, 'r-', marker='o')  # 'r-' pour une ligne rouge avec des marqueurs
+            self.line, = self.ax.plot(self.I, self.rhoResiduals, 'r-', marker='o')  # 'r-' pour une ligne rouge avec des marqueurs
 
     
             for k in range(self.maxOuterIteration):
@@ -655,7 +716,7 @@ class DFMclass():
                 self.C0.append(updateVariables.C0TEMP)
                 self.VgjPrime.append(updateVariables.VgjPrimeTEMP)
 
-                #self.sousRelaxation()
+                self.sousRelaxation()
                 self.calculateResiduals()
                 self.I.append(k)
                 self.residualsVisu()
@@ -722,7 +783,7 @@ class DFMclass():
                         self.fList[self.timeCount] = self.f[-1]
                         self.areaMatrix_1List[self.timeCount] = self.areaMatrix_1[-1]
                         self.areaMatrix_2List[self.timeCount] = self.areaMatrix_2[-1]
-                        self.areaMatrixList[self.timeCount] = self.areaMatrix
+                        self.areaMatrixList[self.timeCo unt] = self.areaMatrix
                         self.VgjList[self.timeCount] = self.Vgj[-1]
                         self.C0List[self.timeCount] = self.C0[-1]
                         self.VgjPrimeList[self.timeCount] = self.VgjPrime[-1]
