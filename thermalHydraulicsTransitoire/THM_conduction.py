@@ -1,13 +1,51 @@
-# Python3 class part of THM_prototype
-# uses : - setting up mesh centered finite difference solution to heat conduction in fuel rod, FDM_ConductionInFuelPin
-#        - setting up finite volume discretization for solving heat convection in coolant, FVM_ConvectionInCanal
-# Author : R. Guasch, C. Huet
-# technical documentation : "Revisiting the simplified thermo-hydraulics module THM: in DONJON5 code" - A. Hébert, March 2018
-# document available at http://merlin.polymtl.ca/downloads/thm.pdf
+"""
+This program simulates radial heat conduction in a nuclear fuel pin using the finite difference method (FDM).
+The code models the temperature distribution across the fuel pin, considering the fuel, gap, and cladding regions.
+technical documentation : "Revisiting the simplified thermo-hydraulics module THM: in DONJON5 code" - A. Hébert, March 2018
+document available at http://merlin.polymtl.ca/downloads/thm.pdf
+Author : R. Guasch, C. Huet
+
+Key features:
+- Discretization of the radial domain into finite difference mesh elements.
+- Calculation of thermal conductivity for each region (fuel, gap, and cladding).
+- Solver for the temperature distribution using a tridiagonal matrix approach.
+- Boundary condition application and computation of center and effective temperatures.
+- Optional extension to visualize the entire system, including the coolant channel.
+
+This program follows standard finite difference approaches to solve the heat conduction equation in cylindrical coordinates, with assumptions of constant properties per region (fuel, gap, cladding), and fixed boundary conditions for outer surface temperature.
+"""
 
 import numpy as np
 
 class FDM_HeatConductionInFuelPin:
+
+    """
+    Parameters:
+    - `r_fuel` : Radius of the fuel pin (m).
+    - `I_f`    : Number of mesh elements in the fuel.
+    - `gap_r`  : Radius of the gap between fuel and cladding (m).
+    - `clad_r` : Radius of the cladding (m).
+    - `I_c`    : Number of mesh elements in the cladding.
+    - `Qfiss`  : Fission power density in the fuel (W/m^3).
+    - `kf`     : Thermal conductivity of the fuel (W/m/K).
+    - `kc`     : Thermal conductivity of the cladding (W/m/K).
+    - `Hgap`   : Heat transfer coefficient through the gap (W/m^2/K).
+    - `z`      : Height corresponding to axial discretization (for potential coupling with axial convection models).
+    - `T_surf` : Outer cladding surface temperature, obtained from convection models.
+
+    Methods:
+    - `compute_Area_meshes`: Calculates mesh boundaries and areas for each region.
+    - `compute_radii`: Converts areas into radial positions for mesh centers and boundaries.
+    - `solve_T_in_pin`: Solves the system of equations for the temperature distribution.
+    - `compute_T_center`: Computes the fuel center temperature using established formulas.
+    - `compute_T_eff`: Computes the effective fuel temperature using simplified correlations.
+    - `initialize_ks`: Initializes the thermal conductivity values for each mesh region.
+    - `set_ADi_cond`: Sets the tri-diagonal matrix entries for internal nodes.
+    - `set_CL_cond`: Applies boundary conditions at the first and last nodes.
+    - `extend_to_canal_visu`: Extends the mesh and temperature distribution for visualization, including coolant.
+    - `initialise_plotting_mesh`: Prepares the radial mesh for plotting the temperature profile.
+    """
+
     def __init__(self, r_fuel, I_f, gap_r, clad_r, I_c, Qfiss, kf, kc, Hgap, z, T_surf):
         # Physical prameters
         self.r_f = r_fuel # fuel pin radius in meters
