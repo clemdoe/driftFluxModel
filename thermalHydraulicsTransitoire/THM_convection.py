@@ -64,7 +64,7 @@ class DFMclass():
         self.tInlet = tInlet
 
         #calculate temporary hInlet
-        pressureDrop = 120481.5 #Pa/m
+        pressureDrop = 186737 #Pa/m
         falsePInlet = pOutlet - height * pressureDrop
         self.hInlet = IAPWS97(T = self.tInlet, P = falsePInlet * 10**(-6)).h*1000 #J/kg
         print(f'hInlet: {self.hInlet}')
@@ -80,8 +80,8 @@ class DFMclass():
         if self.canalType == 'square':
             self.flowArea = self.cote ** 2 - np.pi * self.cladRadius ** 2
         elif self.canalType == 'cylindrical':
-            self.waterGap = self.cote #Gap between the clad and the water m
-            self.waterRadius =  self.cladRadius + self.waterGap #External radius of the water m
+            self.waterGap = self.cote -  self.cladRadius#Gap between the clad and the water m
+            self.waterRadius =  self.cote #External radius of the water m
             self.flowArea = np.pi * self.waterRadius ** 2 - np.pi * self.cladRadius ** 2
 
         #calculate temporary uInlet
@@ -91,9 +91,12 @@ class DFMclass():
         print(f'uInlet: {self.uInlet}')
 
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
-        print(f'flowArea: {self.flowArea}, self.cladRadius: {cladRadius}')
-        self.D_h = 4 * self.flowArea / (np.pi*self.cladRadius) #Hydraulic diameter m2
-        #self.D_h = 0.0078395462
+        if self.height == 2.155:
+            ###########GENFOAM CALCULATION
+            self.D_h = 7.83954616*10**(-3)
+        else:
+            self.D_h = 4 * self.flowArea / (self.cote**2 + np.pi * self.cladRadius**2) #Hydraulic diameter m2   
+        
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18
@@ -102,7 +105,7 @@ class DFMclass():
 
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
-        self.sousRelaxFactor = 0.15
+        self.sousRelaxFactor = 0.2
         self.epsOuterIteration = 1e-3
         self.maxOuterIteration = 1000
 
@@ -141,6 +144,7 @@ class DFMclass():
     def set_Fission_Power(self, Q):
         self.q__ = []
         for i in range(len(Q)):
+            #self.q__.append(Q[i])
             self.q__.append((np.pi * self.fuelRadius**2 * Q[i]) / self.flowArea) #W/m3
 
     def get_Fission_Power(self):

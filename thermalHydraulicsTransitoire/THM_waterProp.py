@@ -337,9 +337,9 @@ class statesVariables():
         if self.frfaccorel == 'base': #Validated
             return 0.000033
         Re = self.getReynoldsNumber(i)
-        if self.frfaccorel == 'blasius': #Not Validated
+        if self.frfaccorel == 'blasius': #Validated
             return 0.186 * Re**(-0.2)
-        if self.frfaccorel == 'Churchill': #Not Validated
+        if self.frfaccorel == 'Churchill': #Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h
             frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   

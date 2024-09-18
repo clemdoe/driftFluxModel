@@ -14,7 +14,7 @@ class Version5_THM_prototype:
     def __init__(self, case_name, canal_type,
                  canal_radius, fuel_radius, gap_radius, clad_radius, fuel_rod_length, tInlet, pOutlet, qFlow, Qfiss,
                  k_fuel, H_gap, k_clad, I_z, I_f, I_c, plot_at_z, solveConduction,
-                 dt, t_tot, frfaccorel = 'base', P2Pcorel = 'base', voidFractionCorrel = 'GEramp'):
+                 dt, t_tot, frfaccorel = 'base', P2Pcorel = 'base', voidFractionCorrel = 'GEramp', numericalMethod= 'FVM'):
         """
         Main constructor for THM case, first set of parameters correspond to canal properties, second set to fuel/gap/clad properties
         The structure followed is : 
@@ -81,8 +81,9 @@ class Version5_THM_prototype:
         print(f'self.clad_r: {self.clad_r}')
         print(f'self.r_w: {self.r_w}')
         print(f'Courant number: {self.uInlet*self.dt/(self.Lf/self.I_z)}')
-        self.convection_sol = DFMclass(self.canal_type, self.I_z, self.tInlet, self.qFlow, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, 'FVM', self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, dt = self.dt, t_tot = self.t_end)
-
+        print(f"Numerical Method {numericalMethod}")
+        self.convection_sol = DFMclass(self.canal_type, self.I_z, self.tInlet, self.qFlow, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, numericalMethod, self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, dt = self.dt, t_tot = self.t_end)
+        print(f'Hydraulic diameter: {self.convection_sol.D_h}')
         # Set the fission power in the fuel rod
         self.convection_sol.set_Fission_Power(self.Qfiss)
         # Resolve the DFM
@@ -519,8 +520,8 @@ class plotting:
             for i, col in enumerate(columns):
                 data[i].append(row[col])
 
-        for i in range(len(data[7])):
-            data[7][i] = (1/0.434492) * data[7][i]
+        #for i in range(len(data[7])):
+            #data[7][i] = (1/0.434492) * data[7][i]
 
         genfoamCASE = [data[0], data[3], data[7], data[3], data[1], data[5]]
         if compParam == 'voidFractionCorrel':
