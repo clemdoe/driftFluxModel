@@ -87,8 +87,7 @@ class DFMclass():
         #calculate temporary uInlet
         self.qFlow = qFlow #kg/s
         self.rhoInlet = IAPWS97(T = self.tInlet, P = falsePInlet*10**(-6)).rho #kg/m3
-        #self.uInlet = self.qFlow / (self.flowArea * self.rhoInlet) #m/s
-        self.uInlet = 4.68292412
+        self.uInlet = self.qFlow / (self.flowArea * self.rhoInlet) #m/s
         print(f'uInlet: {self.uInlet}')
 
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
@@ -231,7 +230,7 @@ class DFMclass():
                 self.VgjPrime = [self.VgjPrimeList[self.timeCount]]
 
     
-    def createSystem(self):
+    def createSystemVelocityPressure(self):
         
         U_old = self.U[-1]
         P_old = self.P[-1]
@@ -250,27 +249,23 @@ class DFMclass():
         Vgj_prime = self.VgjPrime[-1]
         C0 = self.C0[-1]
 
-        VAR_old = self.mergeVar(U_old,P_old,H_old)
-        rho_old = self.mergeVar(rho_old, rho_old, rho_old)
-        rho_g_old = self.mergeVar(rho_g_old, rho_g_old, rho_g_old)
-        rho_l_old = self.mergeVar(rho_l_old, rho_l_old, rho_l_old)
-        epsilon_old = self.mergeVar(epsilon_old, epsilon_old, epsilon_old)
-        areaMatrix = self.mergeVar(areaMatrix, areaMatrix, areaMatrix)
-        areaMatrix_old_1 = self.mergeVar(areaMatrix_old_1, areaMatrix_old_1, areaMatrix_old_1)
-        areaMatrix_old_2 = self.mergeVar(areaMatrix_old_2, areaMatrix_old_2, areaMatrix_old_2)
-        V_gj_old = self.mergeVar(V_gj_old, V_gj_old, V_gj_old)
-        Vgj_prime = self.mergeVar(Vgj_prime, Vgj_prime, Vgj_prime)
-        Dhfg = self.mergeVar(Dhfg, Dhfg, Dhfg)
-        C0 = self.mergeVar(C0, C0, C0)
-        x_th_old = self.mergeVar(x_th_old, x_th_old, x_th_old)
+        VAR_old = self.mergeVar(U_old,P_old)
+        rho_old = self.mergeVar(rho_old, rho_old)
+        rho_g_old = self.mergeVar(rho_g_old, rho_g_old)
+        rho_l_old = self.mergeVar(rho_l_old, rho_l_old)
+        epsilon_old = self.mergeVar(epsilon_old, epsilon_old)
+        areaMatrix = self.mergeVar(areaMatrix, areaMatrix)
+        areaMatrix_old_1 = self.mergeVar(areaMatrix_old_1, areaMatrix_old_1)
+        areaMatrix_old_2 = self.mergeVar(areaMatrix_old_2, areaMatrix_old_2)
+        V_gj_old = self.mergeVar(V_gj_old, V_gj_old)
+        Vgj_prime = self.mergeVar(Vgj_prime, Vgj_prime)
+        Dhfg = self.mergeVar(Dhfg, Dhfg)
+        C0 = self.mergeVar(C0, C0)
+        x_th_old = self.mergeVar(x_th_old, x_th_old)
         
-        i = -1
-        DI = (1/2) * (VAR_old[i-self.nCells]*areaMatrix[i] - VAR_old[i-1-self.nCells]*areaMatrix[i-1]) * ((VAR_old[i-2*self.nCells]+ ((epsilon_old[i] * (rho_l_old[i] - rho_g_old[i]) * V_gj_old[i])/ rho_old[i]))+ (VAR_old[i-1-2*self.nCells]+ ((epsilon_old[i-1] * (rho_l_old[i-1] - rho_g_old[i-1]) * V_gj_old[i-1])/ rho_old[i-1]) ) )
-        DI2 = - (epsilon_old[i]*rho_l_old[i]*rho_g_old[i]*Dhfg[i]*V_gj_old[i]*areaMatrix[i]/rho_old[i]) + (epsilon_old[i-1]*rho_l_old[i-1]*rho_g_old[i-1]*Dhfg[i-1]*V_gj_old[i-1]*areaMatrix[i-1]/rho_old[i-1])
-        DM1 = self.q__[i] * self.DV + DI + DI2
-        VAR_VFM_Class = FVM(A00 = 1, A01 = 0, Am0 = - rho_old[-2] * VAR_old[self.nCells-2] * areaMatrix[-2], Am1 = rho_old[-1] * VAR_old[self.nCells-1] * areaMatrix[-1], D0 = self.uInlet, Dm1 = DM1, N_vol = 3*self.nCells, H = self.height)
+        VAR_VFM_Class = FVM(A00 = 1, A01 = 0, Am0 = 0, Am1 = 1, D0 = self.uInlet, Dm1 = self.pOutlet, N_vol = 2*self.nCells, H = self.height)
         VAR_VFM_Class.boundaryFilling()
-        for i in range(1, VAR_VFM_Class.N_vol-1):
+        for i in range(1, 2*self.nCells-1):
             #Inside the velocity submatrix
             if i < self.nCells-1:
                 VAR_VFM_Class.set_ADi(i, ci = - rho_old[i-1]*areaMatrix[i-1],
@@ -308,33 +303,41 @@ class DFMclass():
                 ai = - rho_old[i]*VAR_old[i-self.nCells]*areaMatrix_old_2[i],
                 bi = rho_old[i+1]*VAR_old[i+1-self.nCells]*areaMatrix_old_1[i+1])
 
-            elif i == 2*self.nCells - 1:
-                VAR_VFM_Class.set_ADi(i, 
-                ci = 0,
-                ai = 1,
-                bi = 0,
-                di =  self.pOutlet)
+        self.FVM = VAR_VFM_Class
 
-                VAR_VFM_Class.fillingOutsideBoundary(2*self.nCells -1, 2*self.nCells -1 - self.nCells,
-                ai = 0,
-                bi = 0)
+    def createSystemEnthalpy(self):
 
+        U_old = self.U[-1]
+        P_old = self.P[-1]
+        H_old = self.H[-1]
+        epsilon_old = self.voidFraction[-1]
+        rho_old = self.rho[-1]
+        rho_g_old = self.rhoG[-1]
+        rho_l_old = self.rhoL[-1]
+        areaMatrix = self.areaMatrix
+        Dhfg = self.Dhfg[-1]
+        x_th_old = self.xTh[-1]
+        f = self.f[-1]
+        V_gj_old = self.Vgj[-1]
+        Vgj_prime = self.VgjPrime[-1]
+        C0 = self.C0[-1]
+
+
+        i = -1
+        DI = (1/2) * (P_old[i]*areaMatrix[i] - P_old[i-1]*areaMatrix[i-1]) * ((U_old[i]+ ((epsilon_old[i] * (rho_l_old[i] - rho_g_old[i]) * V_gj_old[i])/ rho_old[i]))+ (U_old[i-1]+ ((epsilon_old[i-1] * (rho_l_old[i-1] - rho_g_old[i-1]) * V_gj_old[i-1])/ rho_old[i-1]) ) )
+        DI2 = - (epsilon_old[i]*rho_l_old[i]*rho_g_old[i]*Dhfg[i]*V_gj_old[i]*areaMatrix[i]/rho_old[i]) + (epsilon_old[i-1]*rho_l_old[i-1]*rho_g_old[i-1]*Dhfg[i-1]*V_gj_old[i-1]*areaMatrix[i-1]/rho_old[i-1])
+        DM1 = self.q__[i] * self.DV + DI + DI2
+        VAR_VFM_Class = FVM(A00 = 1, A01 = 0, Am0 = - rho_old[-2] * U_old[-2] * areaMatrix[-2], Am1 = rho_old[-1] * U_old[-1] * areaMatrix[-1], D0 = self.hInlet, Dm1 = DM1, N_vol = self.nCells, H = self.height)
+        VAR_VFM_Class.boundaryFilling()
+        for i in range(1,self.nCells -1):
             #Inside the enthalpy submatrix
-            elif i == 2*self.nCells:
-                VAR_VFM_Class.set_ADi(2*self.nCells, 
-                ci = 0,
-                ai = 1,
+            DI = (1/2) * (P_old[i]*areaMatrix[i] - P_old[i-1]*areaMatrix[i-1]) * ((U_old[i]+ ((epsilon_old[i] * (rho_l_old[i] - rho_g_old[i]) * V_gj_old[i])/ rho_old[i]))+ (U_old[i-1]+ ((epsilon_old[i-1] * (rho_l_old[i-1] - rho_g_old[i-1]) * V_gj_old[i-1])/ rho_old[i-1]) ) )
+            DI2 = - (epsilon_old[i]*rho_l_old[i]*rho_g_old[i]*Dhfg[i]*V_gj_old[i]*areaMatrix[i]/rho_old[i]) + (epsilon_old[i-1]*rho_l_old[i-1]*rho_g_old[i-1]*Dhfg[i-1]*V_gj_old[i-1]*areaMatrix[i-1]/rho_old[i-1])
+            VAR_VFM_Class.set_ADi(i, ci =  - rho_old[i-1] * U_old[i-1] * areaMatrix[i-1],
+                ai = rho_old[i] * U_old[i] * areaMatrix[i],
                 bi = 0,
-                di =  self.hInlet)
-
-            elif i > 2*self.nCells and i < 3*self.nCells:
-                DI = (1/2) * (VAR_old[i-self.nCells]*areaMatrix[i] - VAR_old[i-1-self.nCells]*areaMatrix[i-1]) * ((VAR_old[i-2*self.nCells]+ ((epsilon_old[i] * (rho_l_old[i] - rho_g_old[i]) * V_gj_old[i])/ rho_old[i]))+ (VAR_old[i-1-2*self.nCells]+ ((epsilon_old[i-1] * (rho_l_old[i-1] - rho_g_old[i-1]) * V_gj_old[i-1])/ rho_old[i-1]) ) )
-                DI2 = - (epsilon_old[i]*rho_l_old[i]*rho_g_old[i]*Dhfg[i]*V_gj_old[i]*areaMatrix[i]/rho_old[i]) + (epsilon_old[i-1]*rho_l_old[i-1]*rho_g_old[i-1]*Dhfg[i-1]*V_gj_old[i-1]*areaMatrix[i-1]/rho_old[i-1])
-                VAR_VFM_Class.set_ADi(i, ci =  - rho_old[i-1] * VAR_old[i-1-2*self.nCells] * areaMatrix[i-1],
-                ai = rho_old[i] * VAR_old[i-2*self.nCells] * areaMatrix[i],
-                bi = 0,
-                di =  self.q__[i%self.nCells] * self.DV + DI + DI2)
-
+                di =  self.q__[i] * self.DV + DI + DI2)
+        
         self.FVM = VAR_VFM_Class
 
     def createSystemTransient(self):
@@ -445,18 +448,18 @@ class DFMclass():
 
 
     def calculateResiduals(self):#change les residus
-        #self.EPSresiduals.append(np.linalg.norm(self.voidFraction[-1] - self.voidFraction[-2]))
+        self.EPSresiduals.append(np.linalg.norm(self.voidFraction[-1] - self.voidFraction[-2]))
         self.rhoResiduals.append(np.linalg.norm((self.rho[-1] - self.rho[-2])/self.rho[-1]))
-        self.UResiduals.append(np.linalg.norm((self.U[-1] - self.U[-2])/self.U[-1]))
+        #self.UResiduals.append(np.linalg.norm((self.U[-1] - self.U[-2])/self.U[-1]))
         #self.rhoGResiduals.append(np.linalg.norm(self.rhoG[-1] - self.rhoG[-2]))
         #self.rhoLResiduals.append(np.linalg.norm(self.rhoL[-1] - self.rhoL[-2]))
-        #self.xThResiduals.append(np.linalg.norm(self.xTh[-1] - self.xTh[-2]))
+        self.xThResiduals.append(np.linalg.norm(self.xTh[-1] - self.xTh[-2]))
 
     def testConvergence(self, k):#change rien et return un boolean
-        #print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, rhoG: {self.rhoGResiduals[-1]}, rhoL: {self.rhoLResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
-        print(f'Convergence test: rho: {self.rhoResiduals[-1]}, U: {self.UResiduals[-1]}')
-        #if self.EPSresiduals[-1] < 1e-3 and self.rhoGResiduals[-1] < 1e-3 and self.rhoLResiduals[-1] < 1e-3 and self.xThResiduals[-1] < 1e-3:
-        if self.rhoResiduals[-1] < 1e-2 and self.UResiduals[-1] < 1e-2:
+        print(f'Convergence test: EPS: {self.EPSresiduals[-1]}, rho: {self.rhoResiduals[-1]}, xTh: {self.xThResiduals[-1]}')
+        #print(f'Convergence test: rho: {self.rhoResiduals[-1]}, U: {self.UResiduals[-1]}')
+        if self.EPSresiduals[-1] < 1e-3 and self.xThResiduals[-1] < 1e-3 and self.rhoResiduals[-1] < 1e-3:
+        #if self.rhoResiduals[-1] < 1e-2 and self.UResiduals[-1] < 1e-2:
             print(f'Convergence reached at iteration number: {k}')
             return True
         else:
@@ -506,6 +509,7 @@ class DFMclass():
     
     def updateInlet(self):
         #Update uInlet
+        print(f'T: {self.tInlet}, P: {self.P[-1][0]*10**(-6)}')
         self.rhoInlet = IAPWS97(T = self.tInlet, P = self.P[-1][0]*10**(-6)).rho #kg/m3
         print(f'New inlet density: {self.rhoInlet}, self.qFlow: {self.qFlow}, self.flowArea: {self.flowArea}')
         self.uInlet = self.qFlow / (self.flowArea * self.rhoInlet) #m/s
@@ -529,15 +533,24 @@ class DFMclass():
     
             for k in range(self.maxOuterIteration):
                 
-                self.createSystem()
-                resolveSystem = numericalResolution(self.FVM,self.mergeVar(self.U[-1], self.P[-1], self.H[-1]), self.epsInnerIteration, self.maxInnerIteration, self.numericalMethod)
+                self.createSystemVelocityPressure()
+                resolveSystem = numericalResolution(self.FVM,self.mergeVar(self.U[-1], self.P[-1]), self.epsInnerIteration, self.maxInnerIteration, self.numericalMethod)
                 print(resolveSystem.x)
-                Utemp, Ptemp, Htemp = self.splitVar(resolveSystem.x)
-                print(Utemp, Ptemp, Htemp)
+                Utemp, Ptemp = self.splitVar(resolveSystem.x)
+                
                 self.U.append(Utemp)
                 self.P.append(Ptemp)
+
+                self.updateInlet()
+                
+                self.createSystemEnthalpy()
+                resolveSystem = numericalResolution(self.FVM, self.H[-1], self.epsInnerIteration, self.maxInnerIteration, self.numericalMethod)
+                
+                Htemp = resolveSystem.x
+
                 self.H.append(Htemp)
 
+                print(Utemp, Ptemp, Htemp)
                 updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
                 updateVariables.updateFields()
 
@@ -688,15 +701,14 @@ class DFMclass():
             self.C0[-1][i] = self.C0[-1][i] * self.sousRelaxFactor + (1-self.sousRelaxFactor)*self.C0[-2][i]
             self.VgjPrime[-1][i] = self.VgjPrime[-1][i] * self.sousRelaxFactor + (1-self.sousRelaxFactor)*self.VgjPrime[-2][i]
     
-    def mergeVar(self, U, P, H): #créer une liste a partir de 3 liste
-        VAR = np.concatenate((U, P, H))
+    def mergeVar(self, U, P): #créer une liste a partir de 3 liste
+        VAR = np.concatenate((U, P))
         return VAR
     
     def splitVar(self, VAR): #créer 3 liste a partir d'une liste
         U = VAR[:self.nCells]
-        P = VAR[self.nCells:2*self.nCells]
-        H = VAR[2*self.nCells:]
-        return U, P, H
+        P = VAR[self.nCells:]
+        return U, P
     
     def createBoundaryEnthalpy(self):
         for i in range(self.nCells):

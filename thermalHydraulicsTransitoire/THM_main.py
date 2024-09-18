@@ -489,6 +489,15 @@ class plotting:
             ax6.set_ylabel("Fission power in W/m^3")
             ax6.set_title("Fission power distribution in fuel rod")
 
+            
+            """ fig7, ax7 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label="Enthalpy")
+            ax7.set_xlabel("Axial position in m")
+            ax7.set_ylabel("Enthalpy in K")
+            ax7.set_title("Enthalpy distribution in pincell")
+            ax7.legend(loc="best") """
+
             plt.show()
     
         elif compParam == 'frfaccorel':
