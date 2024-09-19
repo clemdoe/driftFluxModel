@@ -362,6 +362,7 @@ class statesVariables():
             phi2phi = (rho/rho_l)*((m-1)*x_th + 1)*((rho_l/rho_g)*x_th + +1)**(0.25)
         elif self.P2Pcorel == 'MNmodel': #Validated
             phi2phi = (1.2 * (rho_l/rho_g -1)*x_th**(0.824) + 1)*(rho/rho_l)
+            print(f'Phi2phi : {phi2phi}')
         return phi2phi
     
     def getAreas(self, i):

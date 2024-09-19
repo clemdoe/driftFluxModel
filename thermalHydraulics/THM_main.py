@@ -20,7 +20,7 @@ compute_case_12223 = False
 
 if compute_case_imposedPower:
     #User choice:
-    solveConduction = False
+    solveConduction = True
     plot_at_z1 = [0.8]
 
     #Geometric parameters:

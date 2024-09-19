@@ -215,7 +215,6 @@ class DFMclass():
                 self.VgjPrimeList[self.timeCount] = self.VgjPrime[-1]
             
             if self.timeCount != 0:
-                print(self.timeCount)
                 self.U = [self.velocityList[self.timeCount]]
                 self.P = [self.pressureList[self.timeCount]]
                 self.H = [self.enthalpyList[self.timeCount]]
@@ -513,7 +512,6 @@ class DFMclass():
     
     def updateInlet(self):
         #Update uInlet
-        print(f'T: {self.tInlet}, P: {self.P[-1][0]*10**(-6)}')
         self.rhoInlet = IAPWS97(T = self.tInlet, P = self.P[-1][0]*10**(-6)).rho #kg/m3
         print(f'New inlet density: {self.rhoInlet}, self.qFlow: {self.qFlow}, self.flowArea: {self.flowArea}')
         self.uInlet = self.qFlow / (self.flowArea * self.rhoInlet) #m/s
@@ -539,7 +537,6 @@ class DFMclass():
                 
                 self.createSystemVelocityPressure()
                 resolveSystem = numericalResolution(self.FVM,self.mergeVar(self.U[-1], self.P[-1]), self.epsInnerIteration, self.maxInnerIteration, self.numericalMethod)
-                print(resolveSystem.x)
                 Utemp, Ptemp = self.splitVar(resolveSystem.x)
                 
                 self.U.append(Utemp)
@@ -554,7 +551,6 @@ class DFMclass():
 
                 self.H.append(Htemp)
 
-                print(Utemp, Ptemp, Htemp)
                 updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
                 updateVariables.updateFields()
 
@@ -586,6 +582,8 @@ class DFMclass():
                 elif k == self.maxOuterIteration - 1:
                     print('Convergence not reached')
                     break
+
+            print(f'U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
 
             plt.ioff()
             plt.show()
