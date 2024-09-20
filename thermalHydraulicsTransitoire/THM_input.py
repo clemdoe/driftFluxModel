@@ -10,8 +10,8 @@ from THM_main import plotting
 compute_case_transient = False
 compute_case_real = False
 compute_case_genfoam_OLD_Ex1_12223  = False
-compute_case_genfoam_NEW_Ex1_12223  = True
-compute_case_genfoam_comparaison_correl = False
+compute_case_genfoam_NEW_Ex1_12223  = False
+compute_case_genfoam_comparaison_correl = True
 compute_case_paths = False
 
 if compute_case_transient:
@@ -246,10 +246,10 @@ if compute_case_genfoam_NEW_Ex1_12223:
     Iz1 = 20 # number of control volumes in the axial direction
 
     ## Thermalhydraulics correlation
-    voidFractionCorrel = "EPRIvoidModel"
-    frfaccorel = "Churchill"
-    P2Pcorel = "HEM2"
-    numericalMethod = 'FVM'
+    voidFractionCorrel = "EPRIvoidModel"    #choice between 'EPRIvoidModel' and 'GEramp' and 'modBestion' and 'HEM1'
+    frfaccorel = "Churchill"                #choice between 'Churchill' and 'blasius'
+    P2Pcorel = "HEM2"                       #choice between 'HEM1' and 'HEM2' and 'MNmodel'
+    numericalMethod = 'BiCGStab'            #choice between 'BiCG', 'BiCGStab', 'GaussSiedel' and 'FVM'
 
     ############ Nuclear Parameters ###########
     ## Fission parameters
@@ -339,32 +339,32 @@ if compute_case_genfoam_comparaison_correl:
             Qfiss1.append(qFiss)
     print(Qfiss1)
         
-    voidFractionCorrel = "GEramp"
+    numericalMethod = 'FVM'
     case1 = Version5_THM_prototype(case_name, canalType,
                  waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
                  kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
     
-    voidFractionCorrel = "modBestion"
+    numericalMethod = 'BiCGStab'
     case2 = Version5_THM_prototype(case_name, canalType,
                  waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
                  kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
     
-    voidFractionCorrel = "EPRIvoidModel"
+    numericalMethod = 'GaussSiedel'
     case3 = Version5_THM_prototype(case_name, canalType,
                  waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
                  kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
 
-    voidFractionCorrel = "HEM1"
+    numericalMethod = 'BiCG'
     case4 = Version5_THM_prototype(case_name, canalType,
                  waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
                  kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
 
     plotter = plotting([case1, case2, case3, case4])
-    plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
+    plotter.plotComparison("numericalMethod", [True, True, True, True, True, True])
     genFoamVolumeFraction = 0.5655077285
     #plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True], genFoamVolumeFraction)
 

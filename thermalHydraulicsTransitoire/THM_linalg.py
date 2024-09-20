@@ -72,7 +72,7 @@ class numericalResolution():
 
         if self.numericalMethod == 'FVM':
             self.x = self.resolveInversion()
-        elif self.numericalMethod == 'BiGStab':
+        elif self.numericalMethod == 'BiCGStab':
             self.x = self.resolveBiCGStab()
         elif self.numericalMethod == 'GaussSiedel':
             self.x = self.resolveGaussSiedel()
@@ -89,7 +89,8 @@ class numericalResolution():
         return VAR
 
     def resolveGaussSiedel(self):
-        M = self.preconditionner(self.A)
+        L, U = self.preconditionner(self.A)
+        M = L @ U
         MStar = np.linalg.inv(M)
 
         A = np.dot(MStar,self.A)
@@ -168,7 +169,8 @@ class numericalResolution():
 
     def resolveBiConjugateGradient(self):
 
-        M = self.preconditionner(self.A)
+        L,U = self.preconditionner(self.A)
+        M = L @ U
         #print(f'M: {M}, \n A: {self.FVM.A}, \n M-1 * A: {np.dot(np.linalg.inv(M), self.FVM.A)}')
         self.condNUMBERB = np.linalg.cond(self.A)
         self.condNUMBER = np.linalg.cond(np.dot(np.linalg.inv(M), self.A))
