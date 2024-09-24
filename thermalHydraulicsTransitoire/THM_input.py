@@ -10,11 +10,11 @@ from THM_main import plotting
 compute_case_transient = False
 compute_case_real = False
 compute_case_genfoam_OLD_Ex1_12223  = False
-compute_case_genfoam_NEW_Ex1_12223  = False
+compute_case_genfoam_NEW_Ex1_12223  = True
 compute_case_genfoam_comparaison_correl = False
 compute_case_paths = False
 compute_case_multiphysics = False
-compute_case_BFBT = True
+compute_case_BFBT = False
 
 if compute_case_transient:
     #User choice:
@@ -220,8 +220,8 @@ if compute_case_genfoam_OLD_Ex1_12223:
 if compute_case_genfoam_NEW_Ex1_12223:
     case_name = "PSBT BenchMark Ex1 12223"
     #User choice:
-    solveConduction = True
-    plot_at_z1 = [0.8]
+    solveConduction = False
+    plot_at_z1 = []
 
     ########## Thermal hydraulics parameters ##########
     ## Geometric parameters
@@ -248,10 +248,10 @@ if compute_case_genfoam_NEW_Ex1_12223:
     Iz1 = 20 # number of control volumes in the axial direction
 
     ## Thermalhydraulics correlation
-    voidFractionCorrel = "EPRIvoidModel"    #choice between 'EPRIvoidModel' and 'GEramp' and 'modBestion' and 'HEM1'
+    voidFractionCorrel = "HEM1"    #choice between 'EPRIvoidModel' and 'GEramp' and 'modBestion' and 'HEM1'
     frfaccorel = "Churchill"                #choice between 'Churchill' and 'blasius'
     P2Pcorel = "HEM2"                       #choice between 'HEM1' and 'HEM2' and 'MNmodel'
-    numericalMethod = 'BiCGStab'            #choice between 'BiCG', 'BiCGStab', 'GaussSiedel' and 'FVM'
+    numericalMethod = 'GaussSiedel'            #choice between 'BiCG', 'BiCGStab', 'GaussSiedel' and 'FVM'
 
     ############ Nuclear Parameters ###########
     ## Fission parameters
@@ -373,18 +373,56 @@ if compute_case_genfoam_comparaison_correl:
     pass
 
 if compute_case_multiphysics:
-
     
-    def guessAxialPowerShape(amplitude, Iz, height):
+    def guessAxialPowerShape(Ptot, Iz, height, radius):
         """
-        Amplitude : float : amplitude of the axial power shape
+        Ptot : float : total power released (W)
         Iz : int : number of control volumes in the axial direction
-        
-        return : np.array : axial power shape with a cosine shape
+        height : float : height of the fuel rod (m)
+        radius : float : radius of the fuel rod (m)
+        return : np.array : axial power shape with a sine shape units (W/m3)
+                            --> corresponds to the power density in each control volume 
+                            !! Issue with IAPWS tables when dividing by Iz
         """
-        z_space = np.linspace(0, height, Iz)
-        return amplitude*np.sin(z_space*np.pi/height)
+        volume = np.pi * radius**2 * height
+        
+        # Heights of each control volume (equally spaced along the tube height)
+        heights = np.linspace(0, height, Iz + 1)
+        
+        # Define the power profile as a sine function of height
+        power_profile = lambda h: np.sin(np.pi * h / height)
+        
+        # Compute the volumic power for each control volume
+        volumic_powers = []
+        total_integral = 0
+        
+        for i in range(Iz):
+            # Midpoint of the control volume
+            h_mid = 0.5 * (heights[i] + heights[i + 1])
+            print(f"Height = {h_mid}")
+            
+            # Power density at this control volume
+            power_density = power_profile(h_mid)
+            print(f"Power density = {power_density}")
+            
+            # Volume of this control volume
+            dz = (heights[i + 1] - heights[i])
+            
+            # Store the volumic power (W/m^3)
+            volumic_powers.append(power_density)
+            
+            # Update total integral for normalization
+            total_integral += power_density * dz
 
+        print(f"Total_integral = {total_integral}")
+        
+        # Normalize the volumetric powers so the total power matches Ptot
+        volumic_powers = np.array(volumic_powers) * Ptot /(total_integral*np.pi*radius**2)/Iz
+        print(f"Volumic powers = {volumic_powers}")
+        total_power = np.sum(volumic_powers) * volume
+        print(f"Total power = {total_power}")
+        
+        return volumic_powers   
 
     ######## End functions declaration ##########
 
@@ -429,18 +467,18 @@ if compute_case_multiphysics:
     Iz1 = 20 # number of control volumes in the axial direction
 
     ## Thermalhydraulics correlation
-    voidFractionCorrel = "HEM1"
-    frfaccorel = "base"
-    P2Pcorel = "base"
-    numericalMethod = "FVM"
+    voidFractionCorrel = "EPRIvoidModel"
+    frfaccorel = "Churchill"
+    P2Pcorel = "HEM2"
+    numericalMethod = "BiCG"
 
     ############ Nuclear Parameters ###########
     ## Fission parameters
     # specific power = 38.6 W/g
-    specificPower = 38.6 # W/g
-    PFiss = specificPower*Fuel_mass*1000*100 # W
-
-    qFiss = PFiss/Fuel_volume # W/m3
+    specificPower = 38.60 # W/g, multiplied by 5 to have a more realistic value and create boiling
+    PFiss = specificPower*Fuel_mass*1000 # W
+    print("PFiss = ", PFiss)
+    qFiss_init = guessAxialPowerShape(PFiss, Iz1, height, fuelRadius)
 
     ## Material parameters
     kFuel = 4.18 # W/m.K, TECHNICAL REPORTS SERIES No. 59 : Thermal Conductivity of Uranium Dioxide, IAEA, VIENNA, 1966
@@ -458,11 +496,9 @@ if compute_case_multiphysics:
     rho = []
     Qfiss = []
 
-    qFiss = guessAxialPowerShape(PFiss, Iz1, height)
-    print(f"qFiss = {qFiss}")
     ## Initial thermal hydraulic resolution
     THComponent = Version5_THM_prototype("Testing THM Prototype", canalType, waterRadius, fuelRadius, gapRadius, cladRadius, 
-                                height, tInlet, pOutlet, massFlowRate, qFiss, kFuel, Hgap, kClad, Iz1, If, I1, zPlotting, 
+                                height, tInlet, pOutlet, massFlowRate, qFiss_init, kFuel, Hgap, kClad, Iz1, If, I1, zPlotting, 
                                 solveConduction, dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, 
                                 numericalMethod = numericalMethod)
     

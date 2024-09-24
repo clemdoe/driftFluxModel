@@ -82,10 +82,10 @@ class numericalResolution():
             raise ValueError('Numerical method not recognized')
 
     def resolveInversion(self):
-
+        print(f'Inside resolveInversion')
         L, U = self.preconditionner(self.A)
         M = np.dot(L,U)
-        VAR = np.linalg.solve(np.dot(np.linalg.inv(M),self.A), np.dot(np.linalg.inv(M),self.b))
+        VAR = np.linalg.solve(self.A,self.b)
         return VAR
 
     def resolveGaussSiedel(self):

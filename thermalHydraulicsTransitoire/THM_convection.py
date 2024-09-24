@@ -59,6 +59,13 @@ class DFMclass():
         - createBoundaryEnthalpy(): Sets the boundary saturation lines for enthalpy.
         """ 
 
+        #user choice
+        self.frfaccorel = frfaccorel
+        self.P2Pcorel = P2P2corel
+        self.numericalMethod = numericalMethod
+        self.voidFractionCorrel = voidFractionCorrel
+        self.voidFractionEquation = 'base'
+
         self.nCells = nCells
         self.pOutlet = pOutlet
         self.tInlet = tInlet
@@ -105,7 +112,10 @@ class DFMclass():
 
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
-        self.sousRelaxFactor = 0.4
+        if self.numericalMethod == 'BiCGStab':
+            self.sousRelaxFactor = 0.
+        else:
+            self.sousRelaxFactor = 1
         self.epsOuterIteration = 1e-3
         self.maxOuterIteration = 1000
 
@@ -123,12 +133,6 @@ class DFMclass():
         self.Iteration = []
         self.I = []
 
-        #user choice
-        self.frfaccorel = frfaccorel
-        self.P2Pcorel = P2P2corel
-        self.numericalMethod = numericalMethod
-        self.voidFractionCorrel = voidFractionCorrel
-        self.voidFractionEquation = 'base'
 
         self.hlSat = []
         self.hgSat = []
