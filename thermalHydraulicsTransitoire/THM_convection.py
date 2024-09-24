@@ -102,7 +102,10 @@ class DFMclass():
             ###########GENFOAM CALCULATION
             self.D_h = 7.83954616*10**(-3)
         else:
-            self.D_h = 4 * self.flowArea / (self.cote**2 + np.pi * self.cladRadius**2) #Hydraulic diameter m2   
+            if self.canalType == 'square':
+                self.D_h = 4 * self.flowArea / (2*self.cote + 2*np.pi * self.cladRadius)
+            elif self.canalType == 'cylindrical':
+                self.D_h = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
         
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
@@ -166,7 +169,7 @@ class DFMclass():
             self.H = [np.ones(self.nCells)*self.hInlet]
             self.voidFraction = [np.array([i*self.epsilonTarget/self.nCells for i in range(self.nCells)])]
 
-            updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
+            updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
             updateVariables.createFields()
                 
             self.xTh = [np.ones(self.nCells)]
@@ -189,7 +192,7 @@ class DFMclass():
                 self.H = [self.enthalpyList[self.timeCount]]
                 self.voidFraction = [self.voidFractionList[self.timeCount]]
 
-                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
+                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
                 updateVariables.createFields()
 
                 self.xTh = [np.ones(self.nCells)]
@@ -529,11 +532,11 @@ class DFMclass():
 
             self.setInitialFields()
             # Active le mode interactif
-            plt.ion()
+            #plt.ion()
             # Crée la figure et l'axe
-            self.fig, self.ax = plt.subplots()
+            #self.fig, self.ax = plt.subplots()
             # Initialisation de la ligne qui sera mise à jour
-            self.line, = self.ax.plot(self.I, self.rhoResiduals, 'r-', marker='o')  # 'r-' pour une ligne rouge avec des marqueurs
+            #self.line, = self.ax.plot(self.I, self.rhoResiduals, 'r-', marker='o')  # 'r-' pour une ligne rouge avec des marqueurs
 
     
             for k in range(self.maxOuterIteration):
@@ -554,8 +557,9 @@ class DFMclass():
 
                 self.H.append(Htemp)
 
-                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
+                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
                 updateVariables.updateFields()
+                print(f'Printing friction factor current iteration: {updateVariables.fTEMP}, printing friction factor older iteration: {self.f[-1]}')
 
                 self.xTh.append(updateVariables.xThTEMP)
                 self.rhoL.append(updateVariables.rholTEMP)
@@ -573,7 +577,7 @@ class DFMclass():
                 self.sousRelaxation()
                 self.calculateResiduals()
                 self.I.append(k)
-                self.residualsVisu()
+                #self.residualsVisu()
 
                 convergence = self.testConvergence(k)
 
@@ -589,8 +593,8 @@ class DFMclass():
 
             #print(f'U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
 
-            plt.ioff()
-            plt.show()
+            #plt.ioff()
+            #plt.show()
 
         elif self.dt != 0:
 
@@ -616,7 +620,7 @@ class DFMclass():
                     self.P.append(Ptemp)
                     self.H.append(Htemp)
 
-                    updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel)
+                    updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
                     updateVariables.updateFields()
 
                     self.xTh.append(updateVariables.xThTEMP)

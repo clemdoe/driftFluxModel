@@ -47,7 +47,7 @@ class statesVariables():
     - getReynoldsNumber(i): Computes the Reynolds number for flow in a given cell.
     """
 
-    def __init__(self, U, P, H, voidFraction, D_h, flowarea, DV, voidFractionCorrel, frfaccorel, P2Pcorel):
+    def __init__(self, U, P, H, voidFraction, D_h, flowarea, DV, voidFractionCorrel, frfaccorel, P2Pcorel, Dz):
         
         self.nCells = len(U)
         self.U = U
@@ -60,8 +60,8 @@ class statesVariables():
         self.g = 9.81
         self.D_h = D_h
         self.flowArea = flowarea
-        self.K_loss = 0
-        self.Dz = 1
+        self.K_loss = 0#0.17
+        self.Dz = Dz
         self.DV = DV
 
     def createFields(self):
@@ -336,15 +336,19 @@ class statesVariables():
         U = self.U[i]
         P = self.P[i]
         Re = self.getReynoldsNumber(i)
+
         if self.frfaccorel == 'base': #Validated
-            return 0.000033
+            print(f'Re : {Re}, f : {1}')
+            return 1
         
         elif self.frfaccorel == 'blasius': #Validated
-            return 0.186 * Re**(-0.2)
+            print(f'Re : {Re}, f : {0.316 * Re**(-0.25)}')
+            return 0.316 * Re**(-0.25)
         elif self.frfaccorel == 'Churchill': #Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h
             frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   
+            print(f'Re : {Re}, f : {frict}')
             return frict
         else:
             raise ValueError('Invalid friction factor correlation model')
@@ -393,4 +397,17 @@ class statesVariables():
         m = (mv * ml) / ( ml * (1 - alpha) + mv * alpha )
         
         return rho * abs(U) * self.D_h / m
+    
+    def getReynoldsNumberLiquid(self, i):
+        Ul = self.getUl(i)
+        rho = self.rholTEMP[i]
+        P = self.P[i]
+        m = IAPWS97(P = P*(10**(-6)), x = 0).mu
+        return rho * abs(Ul) * self.D_h / m
+    
+    def getUl(self, i):
+        return self.U[i] + (self.voidFractionTEMP[i] / ( 1- self.voidFractionTEMP[i])) * (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
+    
+    def getUg(self, i):
+        return self.U[i] + (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
 

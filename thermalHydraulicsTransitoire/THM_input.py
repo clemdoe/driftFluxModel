@@ -10,9 +10,9 @@ from THM_main import plotting
 compute_case_transient = False
 compute_case_real = False
 compute_case_genfoam_OLD_Ex1_12223  = False
-compute_case_genfoam_NEW_Ex1_12223  = True
+compute_case_genfoam_NEW_Ex1_12223  = False
 compute_case_genfoam_comparaison_correl = False
-compute_case_paths = False
+compute_case_paths = True
 compute_case_multiphysics = False
 compute_case_BFBT = False
 
@@ -248,10 +248,10 @@ if compute_case_genfoam_NEW_Ex1_12223:
     Iz1 = 20 # number of control volumes in the axial direction
 
     ## Thermalhydraulics correlation
-    voidFractionCorrel = "HEM1"    #choice between 'EPRIvoidModel' and 'GEramp' and 'modBestion' and 'HEM1'
-    frfaccorel = "Churchill"                #choice between 'Churchill' and 'blasius'
-    P2Pcorel = "HEM2"                       #choice between 'HEM1' and 'HEM2' and 'MNmodel'
-    numericalMethod = 'GaussSiedel'            #choice between 'BiCG', 'BiCGStab', 'GaussSiedel' and 'FVM'
+    voidFractionCorrel = "EPRIvoidModel"    #choice between 'EPRIvoidModel' and 'GEramp' and 'modBestion' and 'HEM1'
+    frfaccorel = "base"                #choice between 'Churchill' and 'blasius'
+    P2Pcorel = "base"                       #choice between 'HEM1' and 'HEM2' and 'MNmodel'
+    numericalMethod = 'FVM'            #choice between 'BiCG', 'BiCGStab', 'GaussSiedel' and 'FVM'
 
     ############ Nuclear Parameters ###########
     ## Fission parameters
@@ -274,15 +274,22 @@ if compute_case_genfoam_NEW_Ex1_12223:
             Qfiss1.append(qFiss)
     print(Qfiss1)
         
-    case1 = Version5_THM_prototype(case_name, canalType,
+    frfaccorel = "Churchill"
+    case2 = Version5_THM_prototype(case_name, canalType,
                  waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
                  kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
-    
-    plotter = plotting([case1])#, case2, case3])#
+    frfaccorel = "blasius"
+    case3 = Version5_THM_prototype(case_name, canalType,
+                 waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                 kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                 dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+
+    plotter = plotting([ case2, case3])#
     #plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
     genFoamVolumeFraction = 0.5655077285
-    plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True], genFoamVolumeFraction)
+    plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'frfaccorel', [True, True, True, True, True, True], genFoamVolumeFraction)
 
 if compute_case_genfoam_comparaison_correl:
     case_name = "genfoam_comparaison_correl"
@@ -509,15 +516,65 @@ if compute_case_multiphysics:
 
 if compute_case_paths:
 
+    def guessAxialPowerShape(Ptot, Iz, height, radius):
+        """
+        Ptot : float : total power released (W)
+        Iz : int : number of control volumes in the axial direction
+        height : float : height of the fuel rod (m)
+        radius : float : radius of the fuel rod (m)
+        return : np.array : axial power shape with a sine shape units (W/m3)
+                            --> corresponds to the power density in each control volume 
+                            !! Issue with IAPWS tables when dividing by Iz
+        """
+        volume = np.pi * radius**2 * height
+        
+        # Heights of each control volume (equally spaced along the tube height)
+        heights = np.linspace(0, height, Iz + 1)
+        
+        # Define the power profile as a sine function of height
+        power_profile = lambda h: np.sin(np.pi * h / height)
+        
+        # Compute the volumic power for each control volume
+        volumic_powers = []
+        total_integral = 0
+        
+        for i in range(Iz):
+            # Midpoint of the control volume
+            h_mid = 0.5 * (heights[i] + heights[i + 1])
+            print(f"Height = {h_mid}")
+            
+            # Power density at this control volume
+            power_density = power_profile(h_mid)
+            print(f"Power density = {power_density}")
+            
+            # Volume of this control volume
+            dz = (heights[i + 1] - heights[i])
+            
+            # Store the volumic power (W/m^3)
+            volumic_powers.append(power_density)
+            
+            # Update total integral for normalization
+            total_integral += power_density * dz
+
+        print(f"Total_integral = {total_integral}")
+        
+        # Normalize the volumetric powers so the total power matches Ptot
+        volumic_powers = np.array(volumic_powers) * Ptot /(total_integral*np.pi*radius**2)/Iz
+        print(f"Volumic powers = {volumic_powers}")
+        total_power = np.sum(volumic_powers) * volume
+        print(f"Total power = {total_power}")
+        
+        return volumic_powers   
+
     ########## User input ##########
 
-    solveConduction = True
-    zPlotting = [0.8]
+    solveConduction = False
+    zPlotting = []
 
     ########## Thermal hydraulics parameters ##########
     ## Geometric parameters
     canalType = "square"
-    waterRadius = 1.295e-2 # m ATRIUM10 pincell pitch
+    waterRadius = 0.102064 #1.295e-2 # m ATRIUM10 pincell pitch
     fuelRadius = 0.4435e-2 # m : fuel rod radius
     gapRadius = 0.4520e-2 # m : expansion gap radius : "void" between fuel and clad - equivalent to inner clad radius
     cladRadius = 0.5140e-2 # m : clad external radius
@@ -525,23 +582,19 @@ if compute_case_paths:
     
 
     ## Fluid parameters
-    tInlet = 270 + 273.15 # K
+    hInlet = 1220 # kJ/kg
+    #tInlet = 270 + 273.15 # K
     # T_inlet, T_outlet = 270, 287 Celcius
-    pOutlet =  7.2e6 # Pa
-    pressureDrop = 186737 #Pa/m
-    falsePInlet = pOutlet - height * pressureDrop
-    rhoInlet = IAPWS97(T = tInlet, P = falsePInlet*10**(-6)).rho #kg/m3
-    flowArea = waterRadius ** 2 - np.pi * cladRadius ** 2
+    pOutlet =  7.25e6 # Pa
+    falsePInlet = 7.4e6 # Pa
+    tInlet = IAPWS97(P = falsePInlet*10**(-6), h = hInlet).T #K
 
     # Nominal coolant flow rate = 1530 kg/s
     # Nominal operating pressure = 7.2 MPa (abs)
-    massFlowRate = 1530  / (200*91)  # kg/s
+    massFlowRate = 8.45  # kg/s
 
     ## Additional parameters needed for the calculation
-    solveConduction = True
-    volumic_mass_U = 19000 # kg/m3
-    Fuel_volume = np.pi*fuelRadius**2*height # m3
-    Fuel_mass = Fuel_volume*volumic_mass_U # kg
+    solveConduction = False
 
     ## Meshing parameters:
     If = 8
@@ -549,37 +602,36 @@ if compute_case_paths:
     Iz1 = 20 # number of control volumes in the axial direction
 
     ## Thermalhydraulics correlation
-    voidFractionCorrel = "HEM1"
-    frfaccorel = "base"
-    P2Pcorel = "base"
+    voidFractionCorrel = "EPRIvoidModel"
+    frfaccorel = "blasius"
+    P2Pcorel = "MNmodel"
     numericalMethod = "FVM"
 
-    ############ Nuclear Parameters ###########
+    """############ Nuclear Parameters ###########
     ## Fission parameters
     # specific power = 38.6 W/g
     specificPower = 38.6 # W/g
     PFiss = specificPower*Fuel_mass*1000*100 # W
-
     qFiss = PFiss/Fuel_volume # W/m3
+    qFiss = guessAxialPowerShape(PFiss, Iz1, height)
+    print(f"qFiss = {qFiss}") """
+
+    PFiss = 2.5e6*Iz1 # W
+    qFiss = guessAxialPowerShape(PFiss, Iz1, height, cladRadius)
+    print(f"qFiss = {qFiss}")
 
     ## Material parameters
     kFuel = 4.18 # W/m.K, TECHNICAL REPORTS SERIES No. 59 : Thermal Conductivity of Uranium Dioxide, IAEA, VIENNA, 1966
     Hgap = 10000 
     kClad = 21.5 # W/m.K, Thermal Conductivity of Zircaloy-2 (as used in BWRX-300) according to https://www.matweb.com/search/datasheet.aspx?MatGUID=eb1dad5ce1ad4a1f9e92f86d5b44740d
     # k_Zircaloy-4 = 21.6 W/m.K too so check for ATRIUM-10 clad material but should have the same thermal conductivity
-    ########## Algorithm parameters ###########
-    nIter = 1000
-    tol = 1e-4
-    underRelaxationFactor = 0.5
-
+    
     ########## Fields of the TH problem ##########
     TeffFuel = []
     Twater = []
     rho = []
     Qfiss = []
 
-    qFiss = guessAxialPowerShape(PFiss, Iz1, height)
-    print(f"qFiss = {qFiss}")
     ## Initial thermal hydraulic resolution
     THComponent = Version5_THM_prototype("Testing THM Prototype", canalType, waterRadius, fuelRadius, gapRadius, cladRadius, 
                                 height, tInlet, pOutlet, massFlowRate, qFiss, kFuel, Hgap, kClad, Iz1, If, I1, zPlotting, 
