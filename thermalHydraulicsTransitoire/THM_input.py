@@ -10,9 +10,9 @@ from THM_main import plotting
 compute_case_transient = False
 compute_case_real = False
 compute_case_genfoam_OLD_Ex1_12223  = False
-compute_case_genfoam_NEW_Ex1_12223  = False
+compute_case_genfoam_NEW_Ex1_12223  = True
 compute_case_genfoam_comparaison_correl = False
-compute_case_paths = True
+compute_case_paths = False
 compute_case_multiphysics = False
 compute_case_BFBT = False
 
@@ -286,7 +286,7 @@ if compute_case_genfoam_NEW_Ex1_12223:
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
 
 
-    plotter = plotting([ case2, case3])#
+    plotter = plotting([case2, case3])#
     #plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
     genFoamVolumeFraction = 0.5655077285
     plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'frfaccorel', [True, True, True, True, True, True], genFoamVolumeFraction)

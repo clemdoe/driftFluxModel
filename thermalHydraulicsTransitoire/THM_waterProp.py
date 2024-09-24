@@ -350,6 +350,12 @@ class statesVariables():
             frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   
             print(f'Re : {Re}, f : {frict}')
             return frict
+        elif self.frfaccorel == 'Churchill_notOK':
+            Re = self.getReynoldsNumberLiquid(i)
+            B = (37530/Re)**16
+            A = (2.475*np.log(1/(((7/Re)**0.9)+0.27*(0.4/self.D_h))))**16
+            f  = 8*(((8/Re)**12) + (1/(A+B)**1.5))**(1/12)
+            return f
         else:
             raise ValueError('Invalid friction factor correlation model')
 
