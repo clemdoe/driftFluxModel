@@ -67,7 +67,6 @@ class Version5_THM_prototype:
         if self.dt == 0 :
             self.transient = False
             print("$$$---------- THM: prototype, steady state case.")
-        print("Warning : only single phase flow treated in this implementation of heat convection in coolant canal.")
 
         # Prepare and solve 1D heat convection along the z direction in the canal.
         print("$$---------- Calling DFM class.")
@@ -90,6 +89,8 @@ class Version5_THM_prototype:
         self.convection_sol.resolveDFM()
         print(f'Pressure: {self.convection_sol.P[-1]} Pa')
         print(f'Enthalpy: {self.convection_sol.H[-1]} J/kg')
+        print(f'Void fraction: {self.convection_sol.voidFraction[-1]}')
+        print(f'Density: {self.convection_sol.rho[-1]} kg/m^3')
         if self.solveConduction:
             Tsurf = self.convection_sol.compute_T_surf()
             print(f'Temperature at the surface: {Tsurf} K')
@@ -248,7 +249,6 @@ class Version5_THM_prototype:
         axs.set_ylabel(f"Temperature in K")
         axs.set_title(f"Temperature distribution in fuel rod at z = {z_val}, {self.name}")
         fig_filled.savefig(f"{self.name}_Figure_plane{plane_index_print}_colors")
-
         plt.show()
 
     def plotColorMap(self):
@@ -369,8 +369,7 @@ class Version5_THM_prototype:
         return
 
 
-
-    def get_nuclear_parameters(self):
+    def get_TH_parameters(self):
         if self.solveConduction:
             print(f'Tfuel : {self.T_eff_fuel} K')
             print(f'Twater : {self.convection_sol.T_water} K')
@@ -493,7 +492,7 @@ class plotting:
             
             fig7, ax7 = plt.subplots()
             for i in range(len(self.caseList)):
-                ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].voidFractionCorrel)
+                ax7.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].voidFractionCorrel)
             ax7.set_xlabel("Axial position in m")
             ax7.set_ylabel("Enthalpy in K")
             ax7.set_title("Enthalpy distribution in pincell")
@@ -557,7 +556,7 @@ class plotting:
             
             fig7, ax7 = plt.subplots()
             for i in range(len(self.caseList)):
-                ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].frfaccorel)
+                ax7.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].frfaccorel)
             ax7.set_xlabel("Axial position in m")
             ax7.set_ylabel("Enthalpy in K")
             ax7.set_title("Enthalpy distribution in pincell")
@@ -621,7 +620,7 @@ class plotting:
             
             fig7, ax7 = plt.subplots()
             for i in range(len(self.caseList)):
-                ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].P2Pcorel)
+                ax7.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].P2Pcorel)
             ax7.set_xlabel("Axial position in m")
             ax7.set_ylabel("Enthalpy in K")
             ax7.set_title("Enthalpy distribution in pincell")
@@ -633,6 +632,7 @@ class plotting:
             if visuParam[0]:
                 fig1, ax1 = plt.subplots()
                 for i in range(len(self.caseList)):
+                    print(f'Twater: { self.caseList[i].convection_sol.T_water}')
                     ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.T_water, label=self.caseList[i].numericalMethod)
                 ax1.set_xlabel("Axial position in m")
                 ax1.set_ylabel("Temperature in K")
@@ -675,21 +675,22 @@ class plotting:
                 ax5.set_title("Velocity distribution in coolant canal")
                 ax5.legend(loc="best")
 
-            fig6, ax6 = plt.subplots()
-            for i in range(len(self.caseList)):
-                ax6.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.get_Fission_Power(), label="Fission power")
-            ax6.set_xlabel("Axial position in m")
-            ax6.set_ylabel("Fission power in W/m^3")
-            ax6.set_title("Fission power distribution in fuel rod")
+            if visuParam[5]:
+                fig6, ax6 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax6.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.get_Fission_Power(), label="Fission power")
+                ax6.set_xlabel("Axial position in m")
+                ax6.set_ylabel("Fission power in W/m^3")
+                ax6.set_title("Fission power distribution in fuel rod")
 
-            
-            fig7, ax7 = plt.subplots()
-            for i in range(len(self.caseList)):
-                ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].numericalMethod)
-            ax7.set_xlabel("Axial position in m")
-            ax7.set_ylabel("Enthalpy in K")
-            ax7.set_title("Enthalpy distribution in pincell")
-            ax7.legend(loc="best")
+            if visuParam[6]:
+                fig7, ax7 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax7.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].numericalMethod)
+                ax7.set_xlabel("Axial position in m")
+                ax7.set_ylabel("Enthalpy in K")
+                ax7.set_title("Enthalpy distribution in pincell")
+                ax7.legend(loc="best")
 
             plt.show()
 

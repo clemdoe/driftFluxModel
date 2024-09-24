@@ -98,6 +98,8 @@ class statesVariables():
 
         elif self.voidFractionCorrel == 'EPRIvoidModel':
             self.EPRIvoidModel()
+        else:
+            raise ValueError('Invalid void fraction correlation model')
 
     
     def modBestion(self):
@@ -153,7 +155,7 @@ class statesVariables():
                     self.VgjPrimeTEMP[i] = self.getVgj_prime(i)
                     break
                 elif j == 999:
-                    print('Convergence in update fields not reached')
+                    raise ValueError('Convergence in update fields not reached')
                     break
                 else:
                     self.voidFractionTEMP[i] = voidFractionNew
@@ -184,7 +186,7 @@ class statesVariables():
                     self.VgjPrimeTEMP[i] = self.getVgj_prime(i)
                     break
                 elif j == 999:
-                    print('Convergence in update fields not reached')
+                    raise ValueError('Convergence in update fields not reached')
                     break
                 else:
                     self.voidFractionTEMP[i] = voidFractionNew
@@ -333,17 +335,20 @@ class statesVariables():
     def getFrictionFactor(self, i):
         U = self.U[i]
         P = self.P[i]
-
+        Re = self.getReynoldsNumber(i)
         if self.frfaccorel == 'base': #Validated
             return 0.000033
-        Re = self.getReynoldsNumber(i)
-        if self.frfaccorel == 'blasius': #Validated
+        
+        elif self.frfaccorel == 'blasius': #Validated
             return 0.186 * Re**(-0.2)
-        if self.frfaccorel == 'Churchill': #Validated
+        elif self.frfaccorel == 'Churchill': #Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h
             frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   
             return frict
+        else:
+            raise ValueError('Invalid friction factor correlation model')
+
         
     def getPhi2Phi(self, i):
         x_th = self.xThTEMP[i]
@@ -362,7 +367,9 @@ class statesVariables():
             phi2phi = (rho/rho_l)*((m-1)*x_th + 1)*((rho_l/rho_g)*x_th + +1)**(0.25)
         elif self.P2Pcorel == 'MNmodel': #Validated
             phi2phi = (1.2 * (rho_l/rho_g -1)*x_th**(0.824) + 1)*(rho/rho_l)
-            print(f'Phi2phi : {phi2phi}')
+            #print(f'Phi2phi : {phi2phi}')
+        else:
+            raise ValueError('Invalid two-phase pressure multiplier correlation model')
         return phi2phi
     
     def getAreas(self, i):

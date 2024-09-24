@@ -253,7 +253,7 @@ class numericalResolution():
             x0 = x
             p0 = p
 
-        print(f'end of resolveBiCGStab with k = {k}')
+        #print(f'end of resolveBiCGStab with k = {k}')
         return x
  
     

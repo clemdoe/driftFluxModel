@@ -180,7 +180,7 @@ class FDM_HeatConductionInFuelPin:
             for elem in row:
                 line+=f"{elem:.3f}   "
             line += "  ]\n"
-            print(line)
+            #print(line)
         self.T_distrib = np.linalg.solve(self.A, self.D)
         self.compute_T_center()
         T_distrib_with_center = np.zeros(self.N_node+1)
