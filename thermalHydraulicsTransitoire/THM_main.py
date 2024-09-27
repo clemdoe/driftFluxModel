@@ -9,6 +9,7 @@ import numpy as np
 from iapws import IAPWS97
 import matplotlib.pyplot as plt
 import pandas as pd
+from openpyxl import Workbook
 
 class Version5_THM_prototype:
     def __init__(self, case_name, canal_type,
@@ -79,6 +80,8 @@ class Version5_THM_prototype:
         print(f'self.r_f: {self.r_f}')
         print(f'self.clad_r: {self.clad_r}')
         print(f'self.r_w: {self.r_w}')
+        print(f'self.Dz: {self.Lf/self.I_z}')
+        print(f'self.dt: {self.dt}')
         print(f'Courant number: {self.uInlet*self.dt/(self.Lf/self.I_z)}')
         print(f"Numerical Method {numericalMethod}")
         self.convection_sol = DFMclass(self.canal_type, self.I_z, self.tInlet, self.qFlow, self.pOutlet, self.Lf, self.r_f, self.clad_r, self.r_w, self.numericalMethod, self.frfaccorel, self.P2Pcorel, self.voidFractionCorrel, dt = self.dt, t_tot = self.t_end)
@@ -92,6 +95,7 @@ class Version5_THM_prototype:
         print(f'Enthalpy: {self.convection_sol.H[-1]} J/kg')
         print(f'Void fraction: {self.convection_sol.voidFraction[-1]}')
         print(f'Density: {self.convection_sol.rho[-1]} kg/m^3')
+        print(f'DV: {self.convection_sol.DV}')
         if self.solveConduction:
             Tsurf = self.convection_sol.compute_T_surf()
             print(f'Temperature at the surface: {Tsurf} K')
@@ -435,7 +439,254 @@ class Version5_THM_prototype:
 class plotting:
     def __init__(self, caseList):
         self.caseList = caseList
-    
+
+    def writeResults(self, filename):
+    # Create a new Excel workbook
+        temperature_cases, void_fraction_cases, density_cases, pressure, velocity, enthalpy_cases = [self.caseList[0].convection_sol.z_mesh],[self.caseList[0].convection_sol.z_mesh],[self.caseList[0].convection_sol.z_mesh],[self.caseList[0].convection_sol.z_mesh],[self.caseList[0].convection_sol.z_mesh],[self.caseList[0].convection_sol.z_mesh]
+        for case in self.caseList:
+            temperature_cases.append(list(case.convection_sol.T_water))
+            void_fraction_cases.append(list(case.convection_sol.voidFraction[-1]))
+            density_cases.append(list(case.convection_sol.rho[-1]))
+            pressure.append(list(case.convection_sol.P[-1]))
+            velocity.append(list(case.convection_sol.U[-1]))
+            enthalpy_cases.append(list(case.convection_sol.H[-1]))
+            parameters = [['waterRadius', 'fuelRadius','gapRadius','cladRadius','height','pOutlet', 'tInlet', 'u_inlet', 'qFlow', 'Iz1', 'qFiss', 'Dz', 'frfaccorel', 'P2Pcorel', 'voidFractionCorrel', 'numericalMethod']]
+            for case in self.caseList:
+                parameters.append([case.r_w, case.r_f, case.gap_r, case.clad_r, case.Lf, case.pOutlet, case.tInlet, case.uInlet, case.qFlow, case.I_z, case.Qfiss, case.convection_sol.DV, case.frfaccorel, case.P2Pcorel, case.voidFractionCorrel, case.numericalMethod])
+
+        print(len(temperature_cases))
+
+        with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+            #Write parameters for each case to a sheet
+            parameters_df = pd.DataFrame(parameters).T
+            parameters_df.columns = ['Parameter'] + [f"Case {i}" for i in range(len(self.caseList))]
+            parameters_df.to_excel(writer, sheet_name='Parameters', index=False)
+
+            # Write temperature data to a sheet
+            temperature_df = pd.DataFrame(temperature_cases).T
+            temperature_df.columns = ['Axial position'] + [f"Temperature (K) Case {i}" for i in range(1,len(temperature_cases))]
+            temperature_df.to_excel(writer, sheet_name='Temperature', index=False)
+
+            # Write void fraction data to a sheet
+            void_fraction_df = pd.DataFrame(void_fraction_cases).T
+            void_fraction_df.columns =  ['Axial position']+[f"Void Fraction Case {i}" for i in range(1,len(void_fraction_cases))]
+            void_fraction_df.to_excel(writer, sheet_name='Void Fraction', index=False)
+
+            # Write density data to a sheet
+            density_df = pd.DataFrame(density_cases).T
+            density_df.columns =  ['Axial position']+[f"Density (kg/m3) Case {i}" for i in range(1,len(density_cases))]
+            density_df.to_excel(writer, sheet_name='Density', index=False)
+
+            # Write pressure data to a sheet
+            pressure_df = pd.DataFrame(pressure).T
+            pressure_df.columns = ['Axial position']+[f"Pressure (Pa) Case {i}" for i in range(1,len(pressure))]
+            pressure_df.to_excel(writer, sheet_name='Pressure', index=False)
+
+            # Write velocity data to a sheet
+            velocity_df = pd.DataFrame(velocity).T
+            velocity_df.columns =  ['Axial position']+[f"Velocity (m/s) Case {i}" for i in range(1,len(velocity))]
+            velocity_df.to_excel(writer, sheet_name='Velocity', index=False)
+
+            # Write enthalpy data to a sheet
+            enthalpy_df = pd.DataFrame(enthalpy_cases).T
+            enthalpy_df.columns = ['Axial position']+[f"Enthalpy (kg/m3) Case {i+1}" for i in range(1,len(enthalpy_cases))]
+            enthalpy_df.to_excel(writer, sheet_name='Enthalpy', index=False)
+            
+    def compute_error(self, GenFoamPathCase, compParam, genFoamVolumeFraction):
+
+        # Read the Excel file
+        df = pd.read_excel(GenFoamPathCase)
+
+        # Create empty lists for each column
+        columns = df.columns.tolist()
+        data = [[] for _ in columns]
+
+        # Iterate over each row and append values to the corresponding list
+        for index, row in df.iterrows():
+            for i, col in enumerate(columns):
+                data[i].append(row[col])
+
+        for i in range(len(data[7])):
+            data[7][i] = (1/(1-genFoamVolumeFraction)) * data[7][i]
+
+        genfoamCASE = [data[0], data[3], data[7], data[3], data[1], data[5]]
+        print(genfoamCASE[2])
+
+        Tw_error, voidFraction_error, pressure_error, velocity_error, = [], [], [], []
+        
+        for i in range(len(self.caseList)):
+            Tw_error.append([])
+            voidFraction_error.append([])
+            pressure_error.append([])
+            velocity_error.append([])
+            for j in range(len(self.caseList[i].convection_sol.z_mesh)):
+                jGF = int(j*len(genfoamCASE[0])/len(self.caseList[i].convection_sol.z_mesh))
+                Tw_error[i].append(100*abs(self.caseList[i].convection_sol.T_water[j] - genfoamCASE[1][jGF])/genfoamCASE[1][jGF])
+                voidFraction_error[i].append(abs(self.caseList[i].convection_sol.voidFraction[-1][j] - genfoamCASE[2][jGF]))
+                pressure_error[i].append(100*abs(self.caseList[i].convection_sol.P[-1][j] - genfoamCASE[4][jGF])/genfoamCASE[4][jGF])
+                velocity_error[i].append(100*abs(self.caseList[i].convection_sol.U[-1][j] - genfoamCASE[5][jGF])/genfoamCASE[5][jGF])
+
+        if compParam == 'numericalMethod':
+            fig1, ax1 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].numericalMethod)
+            ax1.set_xlabel("Axial position in m")
+            ax1.set_ylabel("Error (%)")
+            ax1.set_title("Error in temperature distribution")
+            ax1.legend(loc="best")
+
+            fig2, ax2 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax2.plot(self.caseList[0].convection_sol.z_mesh, voidFraction_error[i], label=self.caseList[i].numericalMethod)
+            ax2.set_xlabel("Axial position in m")
+            ax2.set_ylabel("Error (%)")
+            ax2.set_title("Error in void fraction distribution")
+            ax2.legend(loc="best")
+
+            fig3, ax3 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax3.plot(self.caseList[0].convection_sol.z_mesh, pressure_error[i], label=self.caseList[i].numericalMethod)
+            ax3.set_xlabel("Axial position in m")
+            ax3.set_ylabel("Error (%)")
+            ax3.set_title("Error in pressure distribution")
+            ax3.legend(loc="best")
+
+            fig4, ax4 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax4.plot(self.caseList[0].convection_sol.z_mesh, velocity_error[i], label=self.caseList[i].numericalMethod)
+            ax4.set_xlabel("Axial position in m")
+            ax4.set_ylabel("Error (%)")
+            ax4.set_title("Error in velocity distribution")
+            ax4.legend(loc="best")
+
+            plt.show()
+
+        elif compParam == 'voidFractionCorrel':
+            fig1, ax1 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].voidFractionCorrel)
+            ax1.set_xlabel("Axial position in m")
+            ax1.set_ylabel("Error (%)")
+            ax1.set_title("Error in temperature distribution")
+            ax1.legend(loc="best")
+
+            fig2, ax2 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax2.plot(self.caseList[0].convection_sol.z_mesh, voidFraction_error[i], label=self.caseList[i].voidFractionCorrel)
+            ax2.set_xlabel("Axial position in m")
+            ax2.set_ylabel("Error (%)")
+            ax2.set_title("Error in void fraction distribution")
+            ax2.legend(loc="best")
+
+            fig3, ax3 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax3.plot(self.caseList[0].convection_sol.z_mesh, pressure_error[i], label=self.caseList[i].voidFractionCorrel)
+            ax3.set_xlabel("Axial position in m")
+            ax3.set_ylabel("Error (%)")
+            ax3.set_title("Error in pressure distribution")
+            ax3.legend(loc="best")
+
+            fig4, ax4 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax4.plot(self.caseList[0].convection_sol.z_mesh, velocity_error[i], label=self.caseList[i].voidFractionCorrel)
+            ax4.set_xlabel("Axial position in m")
+            ax4.set_ylabel("Error (%)")
+            ax4.set_title("Error in velocity distribution")
+            ax4.legend(loc="best")
+
+            plt.show()
+
+        elif compParam == 'frfaccorel':
+            fig1, ax1 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].frfaccorel)
+            ax1.set_xlabel("Axial position in m")
+            ax1.set_ylabel("Error (%)")
+            ax1.set_title("Error in temperature distribution")
+            ax1.legend(loc="best")
+
+            fig2, ax2 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax2.plot(self.caseList[0].convection_sol.z_mesh, voidFraction_error[i], label=self.caseList[i].frfaccorel)
+            ax2.set_xlabel("Axial position in m")
+            ax2.set_ylabel("Error (%)")
+            ax2.set_title("Error in void fraction distribution")
+            ax2.legend(loc="best")
+
+            fig3, ax3 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax3.plot(self.caseList[0].convection_sol.z_mesh, pressure_error[i], label=self.caseList[i].frfaccorel)
+            ax3.set_xlabel("Axial position in m")
+            ax3.set_ylabel("Error (%)")
+            ax3.set_title("Error in pressure distribution")
+            ax3.legend(loc="best")
+
+            fig4, ax4 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax4.plot(self.caseList[0].convection_sol.z_mesh, velocity_error[i], label=self.caseList[i].frfaccorel)
+            ax4.set_xlabel("Axial position in m")
+            ax4.set_ylabel("Error (%)")
+            ax4.set_title("Error in velocity distribution")
+            ax4.legend(loc="best")
+
+            plt.show()
+
+        elif compParam == 'P2Pcorrel':
+            fig1, ax1 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].P2Pcorel)
+            ax1.set_xlabel("Axial position in m")
+            ax1.set_ylabel("Error (%)")
+            ax1.set_title("Error in temperature distribution")
+            ax1.legend(loc="best")
+
+            fig2, ax2 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax2.plot(self.caseList[0].convection_sol.z_mesh, voidFraction_error[i], label=self.caseList[i].P2Pcorel)
+            ax2.set_xlabel("Axial position in m")
+            ax2.set_ylabel("Error (%)")
+            ax2.set_title("Error in void fraction distribution")
+            ax2.legend(loc="best")
+
+            fig3, ax3 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax3.plot(self.caseList[0].convection_sol.z_mesh, pressure_error[i], label=self.caseList[i].P2Pcorel)
+            ax3.set_xlabel("Axial position in m")
+            ax3.set_ylabel("Error (%)")
+            ax3.set_title("Error in pressure distribution")
+            ax3.legend(loc="best")
+
+            fig4, ax4 = plt.subplots()
+            for i in range(len(self.caseList)):
+                ax4.plot(self.caseList[0].convection_sol.z_mesh, velocity_error[i], label=self.caseList[i].P2Pcorel)
+            ax4.set_xlabel("Axial position in m")
+            ax4.set_ylabel("Error (%)")
+            ax4.set_title("Error in velocity distribution")
+            ax4.legend(loc="best")
+
+            plt.show()
+
+        
+        for i in range(len(self.caseList)):
+            print(f'Case {i}')
+            voidFraction_error[i] = self.cleanList(voidFraction_error[i])
+            Tw_error[i] = self.cleanList(Tw_error[i])
+            pressure_error[i] = self.cleanList(pressure_error[i])
+            velocity_error[i] = self.cleanList(velocity_error[i])
+            print(f'mean voidFraction: {voidFraction_error[i]}')
+            print(f'Void Fraction error moyenne: {np.mean(voidFraction_error[i])}, erreur max: {np.max(voidFraction_error[i])}')
+            print(f'Temperature error moyenne: {np.mean(Tw_error[i])}, erreur max: {np.max(Tw_error[i])}')
+            print(f'Pressure error moyenne: {np.mean(pressure_error[i])}, erreur max: {np.max(pressure_error[i])}')
+            print(f'Velocity error moyenne: {np.mean(velocity_error[i])}, erreur max: {np.max(velocity_error[i])}')
+
+    def cleanList(self, data):
+        # Convert to numpy array if it's not already
+        data = np.array(data)
+        # Filtrer les NaN et les valeurs infinies
+        cleaned_data = data[np.isfinite(data)]
+        return cleaned_data
+
+
     def plotComparison(self, compParam, visuParam):
         if compParam == 'voidFractionCorrel':
             if visuParam[0]:
@@ -565,7 +816,7 @@ class plotting:
 
             plt.show()
     
-        elif compParam == 'P2Pcorel':
+        elif compParam == 'P2Pcorrel':
             if visuParam[0]:
                 fig1, ax1 = plt.subplots()
                 for i in range(len(self.caseList)):
@@ -715,6 +966,7 @@ class plotting:
 
         genfoamCASE = [data[0], data[3], data[7], data[3], data[1], data[5]]
         if compParam == 'voidFractionCorrel':
+            title = f"Methode numérique: {self.caseList[0].numericalMethod}, \n Correlation multiplicateur biphasique: {self.caseList[0].convection_sol.P2Pcorel}, \n Correlation facteur de friction: {self.caseList[0].convection_sol.frfaccorel}"
             if visuParam[0]:
                 fig1, ax1 = plt.subplots()
                 for i in range(len(self.caseList)):
@@ -722,7 +974,7 @@ class plotting:
                 ax1.plot(genfoamCASE[0], genfoamCASE[1], label="GenFoam")
                 ax1.set_xlabel("Axial position in m")
                 ax1.set_ylabel("Temperature in K")
-                ax1.set_title("Temperature distribution in pincell")
+                ax1.set_title(title)
                 ax1.legend(loc="best")
 
             if visuParam[1]:
@@ -732,7 +984,7 @@ class plotting:
                 ax2.plot(genfoamCASE[0], genfoamCASE[2], label="GenFoam")
                 ax2.set_xlabel("Axial position in m")
                 ax2.set_ylabel("Void fraction")
-                ax2.set_title("Void fraction distribution in coolant canal")
+                ax2.set_title(title)
                 ax2.legend(loc="best")
 
             if visuParam[2]:
@@ -742,7 +994,7 @@ class plotting:
                 #ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
                 ax3.set_xlabel("Axial position in m")
                 ax3.set_ylabel("Density in kg/m^3")
-                ax3.set_title("Density distribution in coolant canal")
+                ax3.set_title(title)
                 ax3.legend(loc="best")
 
             if visuParam[3]:
@@ -752,7 +1004,7 @@ class plotting:
                 ax4.plot(genfoamCASE[0], genfoamCASE[4], label="GenFoam")
                 ax4.set_xlabel("Axial position in m")
                 ax4.set_ylabel("Pressure in Pa")
-                ax4.set_title("Pressure distribution in coolant canal")
+                ax4.set_title(title)
                 ax4.legend(loc="best")
 
             if visuParam[4]:
@@ -762,12 +1014,13 @@ class plotting:
                 ax5.plot(genfoamCASE[0], genfoamCASE[5], label="GenFoam")
                 ax5.set_xlabel("Axial position in m")
                 ax5.set_ylabel("Velocity in m/s")
-                ax5.set_title("Velocity distribution in coolant canal")
+                ax5.set_title(title)
                 ax5.legend(loc="best")
 
             plt.show()
 
         if compParam == 'frfaccorel':
+            title = f"Methode numérique: {self.caseList[0].numericalMethod}, \n Correlation multiplicateur biphasique: {self.caseList[0].convection_sol.P2Pcorel}, \n Correlation void fraction: {self.caseList[0].convection_sol.voidFractionCorrel}"
             if visuParam[0]:
                 fig1, ax1 = plt.subplots()
                 for i in range(len(self.caseList)):
@@ -775,7 +1028,7 @@ class plotting:
                 ax1.plot(genfoamCASE[0], genfoamCASE[1], label="GenFoam")
                 ax1.set_xlabel("Axial position in m")
                 ax1.set_ylabel("Temperature in K")
-                ax1.set_title("Temperature distribution in pincell")
+                ax1.set_title(f"{title}")
                 ax1.legend(loc="best")
 
             if visuParam[1]:
@@ -785,7 +1038,7 @@ class plotting:
                 ax2.plot(genfoamCASE[0], genfoamCASE[2], label="GenFoam")
                 ax2.set_xlabel("Axial position in m")
                 ax2.set_ylabel("Void fraction")
-                ax2.set_title("Void fraction distribution in coolant canal")
+                ax2.set_title(f"{title}")
                 ax2.legend(loc="best")
 
             if visuParam[2]:
@@ -795,7 +1048,7 @@ class plotting:
                 #ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
                 ax3.set_xlabel("Axial position in m")
                 ax3.set_ylabel("Density in kg/m^3")
-                ax3.set_title("Density distribution in coolant canal")
+                ax3.set_title(f"{title}")
                 ax3.legend(loc="best")
 
             if visuParam[3]:
@@ -805,7 +1058,7 @@ class plotting:
                 ax4.plot(genfoamCASE[0], genfoamCASE[4], label="GenFoam")
                 ax4.set_xlabel("Axial position in m")
                 ax4.set_ylabel("Pressure in Pa")
-                ax4.set_title("Pressure distribution in coolant canal")
+                ax4.set_title(f"{title}")
                 ax4.legend(loc="best")
 
             if visuParam[4]:
@@ -815,7 +1068,115 @@ class plotting:
                 ax5.plot(genfoamCASE[0], genfoamCASE[5], label="GenFoam")
                 ax5.set_xlabel("Axial position in m")
                 ax5.set_ylabel("Velocity in m/s")
-                ax5.set_title("Velocity distribution in coolant canal")
+                ax5.set_title(f"{title}")
+                ax5.legend(loc="best")
+
+            plt.show()
+
+        if compParam == 'numericalMethod':
+            title = f"Correlation fracteur de friction: {self.caseList[0].convection_sol.frfaccorel}, \n Correlation multiplicateur biphasique: {self.caseList[0].convection_sol.P2Pcorel}, \n Correlation void fraction: {self.caseList[0].convection_sol.voidFractionCorrel}"
+            if visuParam[0]:
+                fig1, ax1 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.T_water, label=self.caseList[i].numericalMethod)
+                ax1.plot(genfoamCASE[0], genfoamCASE[1], label="GenFoam")
+                ax1.set_xlabel("Axial position in m")
+                ax1.set_ylabel("Temperature in K")
+                ax1.set_title(f"{title}")
+                ax1.legend(loc="best")
+
+            if visuParam[1]:
+                fig2, ax2 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax2.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.voidFraction[-1], label=self.caseList[i].numericalMethod)
+                ax2.plot(genfoamCASE[0], genfoamCASE[2], label="GenFoam")
+                ax2.set_xlabel("Axial position in m")
+                ax2.set_ylabel("Void fraction")
+                ax2.set_title(f"{title}")
+                ax2.legend(loc="best")
+
+            if visuParam[2]:
+                fig3, ax3 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax3.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.rho[-1], label=self.caseList[i].numericalMethod)
+                #ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
+                ax3.set_xlabel("Axial position in m")
+                ax3.set_ylabel("Density in kg/m^3")
+                ax3.set_title(f"{title}")
+                ax3.legend(loc="best")
+
+            if visuParam[3]:
+                fig4, ax4 = plt.subplots() 
+                for i in range(len(self.caseList)):
+                    ax4.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.P[-1], label=self.caseList[i].numericalMethod)
+                ax4.plot(genfoamCASE[0], genfoamCASE[4], label="GenFoam")
+                ax4.set_xlabel("Axial position in m")
+                ax4.set_ylabel("Pressure in Pa")
+                ax4.set_title(f"{title}")
+                ax4.legend(loc="best")
+
+            if visuParam[4]:
+                fig5, ax5 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax5.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.U[-1], label=self.caseList[i].numericalMethod)
+                ax5.plot(genfoamCASE[0], genfoamCASE[5], label="GenFoam")
+                ax5.set_xlabel("Axial position in m")
+                ax5.set_ylabel("Velocity in m/s")
+                ax5.set_title(f"{title}")
+                ax5.legend(loc="best")
+
+            plt.show()
+
+        if compParam == 'P2Pcorrel':
+            title = f"Correlation fracteur de friction: {self.caseList[0].convection_sol.frfaccorel}, \n Méthode numérique: {self.caseList[0].convection_sol.numericalMethod}, \n Correlation void fraction: {self.caseList[0].convection_sol.voidFractionCorrel}"
+            if visuParam[0]:
+                fig1, ax1 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax1.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.T_water, label=self.caseList[i].P2Pcorel)
+                ax1.plot(genfoamCASE[0], genfoamCASE[1], label="GenFoam")
+                ax1.set_xlabel("Axial position in m")
+                ax1.set_ylabel("Temperature in K")
+                ax1.set_title(f"{title}")
+                ax1.legend(loc="best")
+
+            if visuParam[1]:
+                fig2, ax2 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax2.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.voidFraction[-1], label=self.caseList[i].P2Pcorel)
+                ax2.plot(genfoamCASE[0], genfoamCASE[2], label="GenFoam")
+                ax2.set_xlabel("Axial position in m")
+                ax2.set_ylabel("Void fraction")
+                ax2.set_title(f"{title}")
+                ax2.legend(loc="best")
+
+            if visuParam[2]:
+                fig3, ax3 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax3.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.rho[-1], label=self.caseList[i].P2Pcorel)
+                #ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
+                ax3.set_xlabel("Axial position in m")
+                ax3.set_ylabel("Density in kg/m^3")
+                ax3.set_title(f"{title}")
+                ax3.legend(loc="best")
+
+            if visuParam[3]:
+                fig4, ax4 = plt.subplots() 
+                for i in range(len(self.caseList)):
+                    ax4.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.P[-1], label=self.caseList[i].P2Pcorel)
+                ax4.plot(genfoamCASE[0], genfoamCASE[4], label="GenFoam")
+                ax4.set_xlabel("Axial position in m")
+                ax4.set_ylabel("Pressure in Pa")
+                ax4.set_title(f"{title}")
+                ax4.legend(loc="best")
+
+            if visuParam[4]:
+                fig5, ax5 = plt.subplots()
+                for i in range(len(self.caseList)):
+                    ax5.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.U[-1], label=self.caseList[i].P2Pcorel)
+                ax5.plot(genfoamCASE[0], genfoamCASE[5], label="GenFoam")
+                ax5.set_xlabel("Axial position in m")
+                ax5.set_ylabel("Velocity in m/s")
+                ax5.set_title(f"{title}")
                 ax5.legend(loc="best")
 
             plt.show()

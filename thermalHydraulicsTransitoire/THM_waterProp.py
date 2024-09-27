@@ -338,17 +338,14 @@ class statesVariables():
         Re = self.getReynoldsNumber(i)
 
         if self.frfaccorel == 'base': #Validated
-            print(f'Re : {Re}, f : {1}')
             return 1
         
         elif self.frfaccorel == 'blasius': #Validated
-            print(f'Re : {Re}, f : {0.316 * Re**(-0.25)}')
             return 0.316 * Re**(-0.25)
         elif self.frfaccorel == 'Churchill': #Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h
-            frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)   
-            print(f'Re : {Re}, f : {frict}')
+            frict=8*(((8.0/Re)**12)+((2.475*np.log(((7/Re)**0.9)+0.27*R))**16+(37530/Re)**16)**(-1.5))**(1/12)
             return frict
         elif self.frfaccorel == 'Churchill_notOK':
             Re = self.getReynoldsNumberLiquid(i)

@@ -116,7 +116,7 @@ class DFMclass():
         self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
         if self.numericalMethod == 'BiCGStab':
-            self.sousRelaxFactor = 0.
+            self.sousRelaxFactor = 0.8
         else:
             self.sousRelaxFactor = 1
         self.epsOuterIteration = 1e-3
@@ -149,10 +149,13 @@ class DFMclass():
 
     
     def set_Fission_Power(self, Q):
+        print(f'Fission power fluid')
         self.q__ = []
         for i in range(len(Q)):
             #self.q__.append(Q[i])
             self.q__.append((np.pi * self.fuelRadius**2 * Q[i]) / self.flowArea) #W/m3
+            
+            #print((np.pi * self.fuelRadius**2 * Q[i]) / self.flowArea)
 
     def get_Fission_Power(self):
         """
@@ -559,7 +562,6 @@ class DFMclass():
 
                 updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.flowArea, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
                 updateVariables.updateFields()
-                print(f'Printing friction factor current iteration: {updateVariables.fTEMP}, printing friction factor older iteration: {self.f[-1]}')
 
                 self.xTh.append(updateVariables.xThTEMP)
                 self.rhoL.append(updateVariables.rholTEMP)
