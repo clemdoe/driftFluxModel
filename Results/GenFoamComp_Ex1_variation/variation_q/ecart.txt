@@ -1,0 +1,42 @@
+12e8
+
+Max ecart EPRIvoidModel: ecart max 0.007957565645330471, ecart moyen 0.0003043594130353338
+Max ecart GEramp: ecart max 0.007957565645330471, ecart moyen 0.0003043594130353338
+Max ecart modBestion: ecart max 0.007957565645330471, ecart moyen 0.0003043594130353338
+Max ecart HEM1: ecart max 0.007957565645330471, ecart moyen 0.0003043594130353338
+
+14e8
+
+Max ecart EPRIvoidModel: ecart max 0.03483594937280719, ecart moyen 0.0026034886713439264
+Max ecart GEramp: ecart max 0.03483594937280719, ecart moyen 0.0035024284632012423
+Max ecart modBestion: ecart max 0.03483594937280719, ecart moyen 0.003470835099733863
+Max ecart HEM1: ecart max 0.03483594937280719, ecart moyen 0.0029525919269220244
+
+16e8
+
+Max ecart EPRIvoidModel: ecart max 0.042445060551209356, ecart moyen 0.004880269901357892
+Max ecart GEramp: ecart max 0.042445060551209356, ecart moyen 0.0054233999640328386
+Max ecart modBestion: ecart max 0.042445060551209356, ecart moyen 0.005340574869076066
+Max ecart HEM1: ecart max 0.042445060551209356, ecart moyen 0.005459503676647627
+
+18e8
+
+Max ecart EPRIvoidModel: ecart max 0.03428081867009687, ecart moyen 0.007353864216061566
+Max ecart GEramp: ecart max 0.03894832486936117, ecart moyen 0.006408251140745191
+Max ecart modBestion: ecart max 0.03867546475847897, ecart moyen 0.006318040332568281
+Max ecart HEM1: ecart max 0.038470107743786064, ecart moyen 0.008493819281389377
+
+20e8
+
+Max ecart EPRIvoidModel: ecart max 0.04752017959161788, ecart moyen 0.010746427163824625
+Max ecart GEramp: ecart max 0.04855506133385288, ecart moyen 0.008130264890761433
+Max ecart modBestion: ecart max 0.04848843675316924, ecart moyen 0.007964386063706518
+Max ecart HEM1: ecart max 0.05521552644397154, ecart moyen 0.012957015282821756
+
+22e8
+
+
+Max ecart Void Fraction Case 1: ecart max 0.05340659039282819, ecart moyen 0.013240535715930897
+Max ecart Void Fraction Case 2: ecart max 0.05503712729811503, ecart moyen 0.01030659605141135
+Max ecart Void Fraction Case 3: ecart max 0.054969772498235196, ecart moyen 0.009993362724252473
+Max ecart Void Fraction Case 4: ecart max 0.07164823434330692, ecart moyen 0.017999001668950642

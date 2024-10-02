@@ -527,6 +527,7 @@ class plotting:
                 velocity_error[i].append(100*abs(self.caseList[i].convection_sol.U[-1][j] - genfoamCASE[5][jGF])/genfoamCASE[5][jGF])
 
         if compParam == 'numericalMethod':
+            models = [self.caseList[i].numericalMethod for i in range(len(self.caseList))]
             fig1, ax1 = plt.subplots()
             for i in range(len(self.caseList)):
                 ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].numericalMethod)
@@ -562,6 +563,7 @@ class plotting:
             plt.show()
 
         elif compParam == 'voidFractionCorrel':
+            models = [self.caseList[i].voidFractionCorrel for i in range(len(self.caseList))]
             fig1, ax1 = plt.subplots()
             for i in range(len(self.caseList)):
                 ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].voidFractionCorrel)
@@ -597,6 +599,7 @@ class plotting:
             plt.show()
 
         elif compParam == 'frfaccorel':
+            models = [self.caseList[i].frfaccorel for i in range(len(self.caseList))]
             fig1, ax1 = plt.subplots()
             for i in range(len(self.caseList)):
                 ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].frfaccorel)
@@ -632,6 +635,7 @@ class plotting:
             plt.show()
 
         elif compParam == 'P2Pcorrel':
+            models = [self.caseList[i].P2Pcorel for i in range(len(self.caseList))]
             fig1, ax1 = plt.subplots()
             for i in range(len(self.caseList)):
                 ax1.plot(self.caseList[0].convection_sol.z_mesh, Tw_error[i], label=self.caseList[i].P2Pcorel)
@@ -667,17 +671,55 @@ class plotting:
             plt.show()
 
         
+        temperature_errors = {
+                'mean': [],
+                'min': [],
+                'max': []
+            }
+        pressure_errors = {
+                'mean': [],
+                'min': [],
+                'max': []
+            }
+        velocity_errors = {
+                'mean': [],
+                'min': [],
+                'max': []
+            }
+        voidFraction_errors = {
+                'mean': [],
+                'min': [],
+                'max': []
+            }
         for i in range(len(self.caseList)):
+
             print(f'Case {i}')
             voidFraction_error[i] = self.cleanList(voidFraction_error[i])
             Tw_error[i] = self.cleanList(Tw_error[i])
             pressure_error[i] = self.cleanList(pressure_error[i])
             velocity_error[i] = self.cleanList(velocity_error[i])
             print(f'mean voidFraction: {voidFraction_error[i]}')
-            print(f'Void Fraction error moyenne: {np.mean(voidFraction_error[i])}, erreur max: {np.max(voidFraction_error[i])}')
-            print(f'Temperature error moyenne: {np.mean(Tw_error[i])}, erreur max: {np.max(Tw_error[i])}')
-            print(f'Pressure error moyenne: {np.mean(pressure_error[i])}, erreur max: {np.max(pressure_error[i])}')
-            print(f'Velocity error moyenne: {np.mean(velocity_error[i])}, erreur max: {np.max(velocity_error[i])}')
+            print(f'Void Fraction error moyenne: {np.mean(voidFraction_error[i])}, erreur max: {np.max(voidFraction_error[i])}, erreur min: {np.min(voidFraction_error[i])}')
+            print(f'Temperature error moyenne: {np.mean(Tw_error[i])}, erreur max: {np.max(Tw_error[i])}, erreur min: {np.min(Tw_error[i])}')
+            print(f'Pressure error moyenne: {np.mean(pressure_error[i])}, erreur max: {np.max(pressure_error[i])}, erreur min: {np.min(pressure_error[i])}')
+            print(f'Velocity error moyenne: {np.mean(velocity_error[i])}, erreur max: {np.max(velocity_error[i])}, erreur min: {np.min(velocity_error[i])}')
+
+            voidFraction_errors['mean'].append(np.mean(voidFraction_error[i]))
+            voidFraction_errors['max'].append(np.max(voidFraction_error[i]))
+            voidFraction_errors['min'].append(np.min(voidFraction_error[i]))
+            temperature_errors['mean'].append(np.mean(Tw_error[i]))
+            temperature_errors['max'].append(np.max(Tw_error[i]))
+            temperature_errors['min'].append(np.min(Tw_error[i]))
+            pressure_errors['mean'].append(np.mean(pressure_error[i]))
+            pressure_errors['max'].append(np.max(pressure_error[i]))
+            pressure_errors['min'].append(np.min(pressure_error[i]))
+            velocity_errors['mean'].append(np.mean(velocity_error[i]))
+            velocity_errors['max'].append(np.max(velocity_error[i]))
+            velocity_errors['min'].append(np.min(velocity_error[i]))
+
+        # Création des graphiques pour pression, température et vitesse
+        self.plot_error_graph(models, voidFraction_errors, temperature_errors, pressure_errors, velocity_errors)
+        plt.show()
 
     def cleanList(self, data):
         # Convert to numpy array if it's not already
@@ -686,6 +728,45 @@ class plotting:
         cleaned_data = data[np.isfinite(data)]
         return cleaned_data
 
+
+    # Fonction pour créer des graphiques pour les différentes variables
+    def plot_error_graph(self, models, void_fraction_errors, temperature_errors, pressure_errors, velocity_errors):
+        fig, ax = plt.subplots()
+
+        # Positions pour chaque groupe de barres
+        width = 0.2  # Largeur des barres
+        x = np.arange(len(models))  # Positions des modèles
+
+        # Barres pour les erreurs de fraction de vide
+        bars_void_fraction = ax.bar(x - 1.5*width, void_fraction_errors['mean'], width, 
+                                    yerr=[void_fraction_errors['mean'], [void_fraction_errors['max'][i] - void_fraction_errors['mean'][i] for i in range(len(models))]],
+                                    capsize=5, label='Fraction de vide', color='skyblue')
+
+        """ # Barres pour les erreurs de température
+        bars_temperature = ax.bar(x - 0.5*width, temperature_errors['mean'], width, 
+                                yerr=[temperature_errors['mean'], [temperature_errors['max'][i] - temperature_errors['mean'][i] for i in range(len(models))]],
+                                capsize=5, label='Température', color='lightcoral')
+
+        # Barres pour les erreurs de pression
+        bars_pressure = ax.bar(x + 0.5*width, pressure_errors['mean'], width, 
+                            yerr=[pressure_errors['mean'], [pressure_errors['max'][i] - pressure_errors['mean'][i] for i in range(len(models))]],
+                            capsize=5, label='Pression', color='lightgreen') """
+
+        """ # Barres pour les erreurs de vitesse
+        bars_velocity = ax.bar(x + 1.5*width, velocity_errors['mean'], width, 
+                            yerr=[velocity_errors['mean'], [velocity_errors['max'][i] - velocity_errors['mean'][i] for i in range(len(models))]],
+                            capsize=5, label='Vitesse', color='orange') """
+
+        # Ajout des labels et titre
+        ax.set_xlabel('Modèles')
+        ax.set_ylabel('Erreurs')
+        ax.set_title('Comparaison des erreurs de fraction de vide, température, pression et vitesse')
+        ax.set_xticks(x)
+        ax.set_xticklabels(models)
+        ax.legend(loc="upper left")
+
+        # Affichage du graphique
+        plt.tight_layout()
 
     def plotComparison(self, compParam, visuParam):
         if compParam == 'voidFractionCorrel':

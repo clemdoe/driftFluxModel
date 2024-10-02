@@ -629,6 +629,7 @@ if compute_case_genfoam_comparaison_voidFractionCorrel:
     genFoamVolumeFraction = 0.5655077285
     plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True], genFoamVolumeFraction)
     plotter.compute_error(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", "voidFractionCorrel", genFoamVolumeFraction)
+
     plotter.writeResults(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\resultsDFM.xlsx")
 
 if compute_case_multiphysics:
@@ -937,7 +938,7 @@ if compute_case_BFBT:
 
 
 if compute_case_compare_power:
-    QList = [2e8, 4e8, 6e8, 8e8, 1e9, 1.2e9, 1.4e9, 1.6e9, 1.8e9, 2e9]
+    QList = [50e8]
     for j in range(len(QList)):
         case_name = "genfoam_comparaison_correl"
         #User choice:
