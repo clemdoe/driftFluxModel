@@ -5,12 +5,14 @@ from THM_main import Version5_THM_prototype
 from iapws import IAPWS97
 import numpy as np
 from THM_main import plotting
+import pandas as pd
+import matplotlib.pyplot as plt
 # Begining of the script used to test the THM prototype class.
 
 compute_case_transient = False
 compute_case_real = False
 compute_case_genfoam_OLD_Ex1_12223  = False
-compute_case_genfoam_NEW_Ex1_12223  = False
+compute_case_genfoam_NEW_Ex1_12223  = True
 compute_case_genfoam_comparaison_numericalMethod = False
 compute_case_genfoam_comparaison_P2Pcorel = False
 compute_case_genfoam_comparaison_frfaccorel = False
@@ -18,7 +20,9 @@ compute_case_genfoam_comparaison_voidFractionCorrel = False
 compute_case_paths = False
 compute_case_multiphysics = False
 compute_case_BFBT = False
-compute_case_compare_power = True
+compute_case_compare_power = False
+compute_case_compare_Dh = False
+compute_case_compare_Dz = False
 
 
 if compute_case_transient:
@@ -1027,3 +1031,309 @@ if compute_case_compare_power:
         #plotter.compute_error(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", "voidFractionCorrel", genFoamVolumeFraction)
         
         plotter.writeResults(rf"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\resultsDFM_q_{QList[j]}.xlsx")
+
+
+if compute_case_compare_Dh:
+    rw_list = [0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.020]
+    D_h = []
+    dict_results ={
+    }
+    for j in range(len(rw_list)):
+        case_name = "genfoam_comparaison_Dh"
+        #User choice:
+        solveConduction = False
+        plot_at_z1 = [0.8]
+
+        ########## Thermal hydraulics parameters ##########
+        ## Geometric parameters
+        canalType = "square"
+        waterRadius = rw_list[j] # m  0.0133409 # m #cote or radius if cylindrical
+        fuelRadius = 0.00542310/2 # m : fuel rod radius
+        gapRadius = fuelRadius + 0.0000000001  # m : expansion gap radius : "void" between fuel and clad - equivalent to inner clad radius
+        cladRadius =  0.0094996/2 # m : clad external radius
+        height = 1.655 # m : height : active core height in BWRX-300 SMR
+
+        ## Fluid parameters
+        pOutlet = 14719781.65 # Pa
+        tInlet = 592.75 #K
+        u_inlet = 4.467092221 #m/s
+        pressureDrop = 186737 #Pa/m
+        falsePInlet = pOutlet - height * pressureDrop
+        rhoInlet = IAPWS97(T = tInlet, P = falsePInlet*10**(-6)).rho #kg/m3
+        flowArea = waterRadius ** 2 - np.pi * cladRadius ** 2
+        qFlow = u_inlet * rhoInlet * flowArea # kg/m^2/s
+
+        ## Meshing parameters:
+        If = 8
+        I1 = 3
+        Iz1 = 20 # number of control volumes in the axial direction
+
+        ## Thermalhydraulics correlation
+        voidFractionCorrel = "EPRIvoidModel"
+        frfaccorel = "Churchill"
+        P2Pcorel = "MNmodel"
+        numericalMethod = 'FVM'
+
+        ############ Nuclear Parameters ###########
+        ## Fission parameters
+        qFiss = 1943301220 # W/m3
+
+        ## Material parameters
+        kFuel = 4.18 # W/m.K, TECHNICAL REPORTS SERIES No. 59 : Thermal Conductivity of Uranium Dioxide, IAEA, VIENNA, 1966
+        Hgap = 10000
+        kClad = 21.5 # W/m.K, Thermal Conductivity of Zircaloy-2 (as used in BWRX-300) according to https://www.matweb.com/search/datasheet.aspx?MatGUID=eb1dad5ce1ad4a1f9e92f86d5b44740d
+        # k_Zircaloy-4 = 21.6 W/m.K too so check for ATRIUM-10 clad material but should have the same thermal conductivity
+        ########## Algorithm parameters ###########
+        nIter = 1000
+        tol = 1e-4
+
+        Qfiss1 = []
+        for i in range(Iz1): 
+            if i*(height/Iz1) < 0.1:
+                Qfiss1.append(0)
+            else:
+                Qfiss1.append(qFiss)
+        print(Qfiss1)
+            
+        voidFractionCorrel= "EPRIvoidModel"
+        case1 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+        D_h.append(case1.convection_sol.D_h)
+
+        voidFractionCorrel= "GEramp"
+        case2 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+        voidFractionCorrel= "modBestion"
+        case3 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+        voidFractionCorrel= "HEM1"
+        case4 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+        
+        plotter = plotting([case1, case2, case3, case4])
+        #plotter.plotComparison("numericalMethod", [True, True, True, True, True, True, True])
+        genFoamVolumeFraction = 0.5655077285
+        #plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True], genFoamVolumeFraction)
+        #plotter.compute_error(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", "voidFractionCorrel", genFoamVolumeFraction)
+    
+        dict_results[case1.convection_sol.D_h] = [case1.convection_sol.voidFraction[-1], case2.convection_sol.voidFraction[-1], case3.convection_sol.voidFraction[-1], case4.convection_sol.voidFraction[-1]]
+    print(f'D_h: {{{D_h}}}')
+    xDFM = case1.convection_sol.z_mesh
+
+    # Read the Excel file
+    df = pd.read_excel(rf'C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\Results\GenFoamComp_Ex1_variation\variation_D_h\GFresults.xlsx')
+
+    # Create empty lists for each column
+    columns = df.columns.tolist()
+    data = [[] for _ in columns]
+
+    # Iterate over each row and append values to the corresponding list
+    for index, row in df.iterrows():
+        for i, col in enumerate(columns):
+            data[i].append(row[col])
+
+    xGenFoam = data[0]
+    ecart0=[]
+    ecart1=[]
+    ecart2=[]
+    ecart3=[]
+    for i in range(len(D_h)):
+        
+
+        # Créer un DataFrame pour la première série
+        df1 = pd.DataFrame({'x': xGenFoam, 'y': data[i]})
+        
+        # Créer un DataFrame pour la deuxième série
+        df2 = pd.DataFrame({'x': xDFM, 'y': dict_results[D_h[i]][0]})
+        df3 = pd.DataFrame({'x': xDFM, 'y': dict_results[D_h[i]][1]})
+        df4 = pd.DataFrame({'x': xDFM, 'y': dict_results[D_h[i]][2]})
+        df5 = pd.DataFrame({'x': xDFM, 'y': dict_results[D_h[i]][3]})
+
+        # Interpolation de la deuxième série sur les abscisses de la première série
+        df2_interp = pd.DataFrame({'x': df1['x']})
+        df2_interp['y_interp'] = np.interp(df1['x'], df2['x'], df2['y'])
+
+        df3_interp = pd.DataFrame({'x': df1['x']})
+        df3_interp['y_interp'] = np.interp(df1['x'], df3['x'], df3['y'])
+
+        df4_interp = pd.DataFrame({'x': df1['x']})
+        df4_interp['y_interp'] = np.interp(df1['x'], df4['x'], df4['y'])
+
+        df5_interp = pd.DataFrame({'x': df1['x']})
+        df5_interp['y_interp'] = np.interp(df1['x'], df5['x'], df5['y'])
+
+        # Calcul de la différence entre les deux séries
+        ecart0.append(np.linalg.norm(df1['y'] - df2_interp['y_interp']))
+        ecart1.append(np.linalg.norm(df1['y'] - df3_interp['y_interp']))
+        ecart2.append(np.linalg.norm(df1['y'] - df4_interp['y_interp']))
+        ecart3.append(np.linalg.norm(df1['y'] - df5_interp['y_interp']))
+
+    # Affichage de la différence
+    fig, ax = plt.subplots()
+    ax.plot(D_h, ecart0, label=f"Ecart {case1.convection_sol.voidFractionCorrel}.")
+    ax.plot(D_h, ecart1, label=f"Ecart {case2.convection_sol.voidFractionCorrel}.")
+    ax.plot(D_h, ecart2, label=f"Ecart {case3.convection_sol.voidFractionCorrel}.")
+    ax.plot(D_h, ecart3, label=f"Ecart {case4.convection_sol.voidFractionCorrel}.")
+    ax.set_xlabel("x")
+    ax.set_ylabel("Ecart")
+    ax.set_title("Ecart avec GenFoam")
+    ax.legend(loc="best")
+    plt.show()
+
+
+if compute_case_compare_Dz:
+    IzList = [10, 20, 40, 80, 160, 320, 640, 1280]
+    dict_results ={
+    }
+    for j in range(len(IzList)):
+        case_name = "genfoam_comparaison_Dz"
+        #User choice:
+        solveConduction = False
+        plot_at_z1 = [0.8]
+
+        ########## Thermal hydraulics parameters ##########
+        ## Geometric parameters
+        canalType = "square"
+        waterRadius = 0.0133409 # m #cote or radius if cylindrical
+        fuelRadius = 0.00542310/2 # m : fuel rod radius
+        gapRadius = fuelRadius + 0.0000000001  # m : expansion gap radius : "void" between fuel and clad - equivalent to inner clad radius
+        cladRadius =  0.0094996/2 # m : clad external radius
+        height = 1.655 # m : height : active core height in BWRX-300 SMR
+
+        ## Fluid parameters
+        pOutlet = 14719781.65 # Pa
+        tInlet = 592.75 #K
+        u_inlet = 4.467092221 #m/s
+        pressureDrop = 186737 #Pa/m
+        falsePInlet = pOutlet - height * pressureDrop
+        rhoInlet = IAPWS97(T = tInlet, P = falsePInlet*10**(-6)).rho #kg/m3
+        flowArea = waterRadius ** 2 - np.pi * cladRadius ** 2
+        qFlow = u_inlet * rhoInlet * flowArea # kg/m^2/s
+
+        ## Meshing parameters:
+        If = 8
+        I1 = 3
+        Iz1 = IzList[j] # number of control volumes in the axial direction
+
+        ## Thermalhydraulics correlation
+        voidFractionCorrel = "EPRIvoidModel"
+        frfaccorel = "Churchill"
+        P2Pcorel = "MNmodel"
+        numericalMethod = 'FVM'
+
+        ############ Nuclear Parameters ###########
+        ## Fission parameters
+        qFiss = 1943301220 # W/m3
+
+        ## Material parameters
+        kFuel = 4.18 # W/m.K, TECHNICAL REPORTS SERIES No. 59 : Thermal Conductivity of Uranium Dioxide, IAEA, VIENNA, 1966
+        Hgap = 10000
+        kClad = 21.5 # W/m.K, Thermal Conductivity of Zircaloy-2 (as used in BWRX-300) according to https://www.matweb.com/search/datasheet.aspx?MatGUID=eb1dad5ce1ad4a1f9e92f86d5b44740d
+        # k_Zircaloy-4 = 21.6 W/m.K too so check for ATRIUM-10 clad material but should have the same thermal conductivity
+        ########## Algorithm parameters ###########
+        nIter = 1000
+        tol = 1e-4
+
+        Qfiss1 = []
+        for i in range(Iz1): 
+            if i*(height/Iz1) < 0.1:
+                Qfiss1.append(0)
+            else:
+                Qfiss1.append(qFiss)
+        print(Qfiss1)
+            
+        voidFractionCorrel= "EPRIvoidModel"
+        case1 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+        voidFractionCorrel= "GEramp"
+        case2 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+        voidFractionCorrel= "modBestion"
+        case3 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+        voidFractionCorrel= "HEM1"
+        case4 = Version5_THM_prototype(case_name, canalType,
+                    waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                    kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                    dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+        
+        plotter = plotting([case1, case2, case3, case4])
+        #plotter.plotComparison("numericalMethod", [True, True, True, True, True, True, True])
+        genFoamVolumeFraction = 0.5655077285
+        #plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True], genFoamVolumeFraction)
+        #plotter.compute_error(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", "voidFractionCorrel", genFoamVolumeFraction)
+    
+        dict_results[IzList[j]] = [case1.convection_sol.voidFraction[-1], case2.convection_sol.voidFraction[-1], case3.convection_sol.voidFraction[-1], case4.convection_sol.voidFraction[-1]]
+
+    xDFM = case1.convection_sol.z_mesh
+
+    # Read the Excel file
+    df = pd.read_excel(rf'C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\Results\GenFoamComp_Ex1_variation\variation_Iz\GFresults.xlsx')
+
+    # Create empty lists for each column
+    columns = df.columns.tolist()
+    data = [[] for _ in columns]
+
+    # Iterate over each row and append values to the corresponding list
+    for index, row in df.iterrows():
+        for i, col in enumerate(columns):
+            data[i].append(row[col])
+
+    xGenFoam = data[0]
+    ecart0=[]
+    ecart1=[]
+    ecart2=[]
+    ecart3=[]
+
+    from scipy.interpolate import interp1d
+    # Fonction pour interpoler la solution de référence sur les hauteurs simulées
+    def interpolate_and_compare(hauteur_ref, fraction_vide_ref, hauteur_sim):
+        # Interpolation de la solution de référence
+        interpolation = interp1d(hauteur_ref, fraction_vide_ref, fill_value="extrapolate")
+        
+        # Calcul de la fraction de vide interpolée sur les hauteurs simulées
+        fraction_vide_interpolee = interpolation(hauteur_sim)
+        
+        return fraction_vide_interpolee
+
+    for i in range(len(IzList)):
+
+        # Interpolation pour la première simulation
+        fraction_vide_interpolée_sim = interpolate_and_compare(xGenFoam, data[1], xDFM[i])
+    
+        # Calcul de l'écart entre la solution de référence et la solution interpolée
+        ecart0.append(np.mean(abs(dict_results[IzList[i]][0] - fraction_vide_interpolée_sim)))
+        ecart1.append(np.mean(abs(dict_results[IzList[i]][1] - fraction_vide_interpolée_sim)))
+        ecart2.append(np.mean(abs(dict_results[IzList[i]][2] - fraction_vide_interpolée_sim)))
+        ecart3.append(np.mean(abs(dict_results[IzList[i]][3] - fraction_vide_interpolée_sim)))
+
+    # Affichage de la différence
+    fig, ax = plt.subplots()
+    ax.plot(IzList, ecart0, label=f"Ecart {case1.convection_sol.voidFractionCorrel}.")
+    ax.plot(IzList, ecart1, label=f"Ecart {case2.convection_sol.voidFractionCorrel}.")
+    ax.plot(IzList, ecart2, label=f"Ecart {case3.convection_sol.voidFractionCorrel}.")
+    ax.plot(IzList, ecart3, label=f"Ecart {case4.convection_sol.voidFractionCorrel}.")
+    ax.set_xlabel("Raffinement en hauteur")
+    ax.set_ylabel("Ecart")
+    ax.set_title("Ecart avec GenFoam")
+    ax.legend(loc="best")
+    plt.show()

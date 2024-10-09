@@ -1098,16 +1098,6 @@ class plotting:
                 ax5.set_title(title)
                 ax5.legend(loc="best")
 
-            fig6, ax6 = plt.subplots()
-            for i in range(len(self.caseList)):
-                ax6.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label="Enthalpy (kJ/kg)")
-            ax6.set_xlabel("Axial position in m")
-            ax6.set_ylabel("Enthalpy in kJ/kg")
-            ax6.set_title(title)
-            ax6.legend(loc="best")
-
-
-
             plt.show()
 
         if compParam == 'frfaccorel':
@@ -1161,14 +1151,6 @@ class plotting:
                 ax5.set_ylabel("Velocity in m/s")
                 ax5.set_title(f"{title}")
                 ax5.legend(loc="best")
-
-            fig6, ax6 = plt.subplots()
-            for i in range(len(self.caseList)):
-                ax6.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.H[-1], label=self.caseList[i].frfaccorel)
-            ax6.set_xlabel("Axial position in m")
-            ax6.set_ylabel("Enthalpy in kJ/kg")
-            ax6.set_title(title)
-            ax6.legend(loc="best")
 
             plt.show()
 
