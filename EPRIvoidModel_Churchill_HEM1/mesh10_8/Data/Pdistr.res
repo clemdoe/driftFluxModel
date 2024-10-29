@@ -1,0 +1,54 @@
+
+          *****   POWER-DISTRIBUTION OVER THE REACTOR CORE   *****
+
+                         NX= 1,  NY= 1,  NZ=10
+
+
+   PLANE-Y #01     PLANE-Z #01
+
+ 1.39914551E+02
+
+
+   PLANE-Y #01     PLANE-Z #02
+
+ 3.70781525E+02
+
+
+   PLANE-Y #01     PLANE-Z #03
+
+ 5.60503906E+02
+
+
+   PLANE-Y #01     PLANE-Z #04
+
+ 6.92282104E+02
+
+
+   PLANE-Y #01     PLANE-Z #05
+
+ 7.56956055E+02
+
+
+   PLANE-Y #01     PLANE-Z #06
+
+ 7.51338318E+02
+
+
+   PLANE-Y #01     PLANE-Z #07
+
+ 6.77501587E+02
+
+
+   PLANE-Y #01     PLANE-Z #08
+
+ 5.41796509E+02
+
+
+   PLANE-Y #01     PLANE-Z #09
+
+ 3.55027100E+02
+
+
+   PLANE-Y #01     PLANE-Z #10
+
+ 1.33294586E+02

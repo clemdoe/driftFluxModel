@@ -1,0 +1,11 @@
+frfaccorel = "Churchill"
+case2 = Version5_THM_prototype(case_name, canalType,
+                 waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                 kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                 dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+
+frfaccorel = "Churchill"
+case3 = Version5_THM_prototype(case_name, canalType,
+                 waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                 kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                 dt = 0.01, t_tot = 3, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)

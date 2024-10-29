@@ -95,22 +95,20 @@ class DFMclass():
         self.qFlow = qFlow #kg/s
         self.rhoInlet = IAPWS97(T = self.tInlet, P = falsePInlet*10**(-6)).rho #kg/m3
         self.uInlet = self.qFlow / (self.flowArea * self.rhoInlet) #m/s
+        print('Velocity at the inlet: ', self.uInlet)
         #print(f'uInlet: {self.uInlet}')
 
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
-        if self.height == 2.155:
-            ###########GENFOAM CALCULATION
-            self.D_h = 7.83954616*10**(-3)
-        else:
-            if self.canalType == 'square':
-                self.Dh =  4 * self.flowArea / (2*self.cote + 2*np.pi * self.cladRadius)
-            elif self.canalType == 'cylindrical':
-                self.Dh = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
+        
+        if self.canalType == 'square':
+            self.Dh =  4 * self.flowArea / ( 2*np.pi * self.cladRadius) #2*self.cote +
+        elif self.canalType == 'cylindrical':
+            self.Dh = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
 
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0.18
-        self.K_loss = 0
+        self.K_loss = 0.17
         self.dx = self.height / self.nCells
 
         #Porous media parameters
@@ -129,7 +127,7 @@ class DFMclass():
             self.D_h.append(self.Dh * self.poro[i]**2)
 
 
-        self.epsInnerIteration = 1e-2
+        self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
         if self.numericalMethod == 'BiCGStab':
             self.sousRelaxFactor = 0.8
@@ -162,16 +160,29 @@ class DFMclass():
             self.t_tot = t_tot
             self.timeList = np.arange(0, self.t_tot, self.dt)
             self.timeCount = 0
-
     
     def set_Fission_Power(self, Q):
-        print(f'Fission power fluid')
-        self.q__ = []
-        for i in range(len(Q)):
-            #self.q__.append(Q[i])
-            self.q__.append((np.pi * self.fuelRadius**2 * Q[i]) / self.areaMatrix[i]) #W/m3
+        if self.dt == 0:
+            print(f'Fission power fluid')
+            self.q__ = []
+            for i in range(len(Q)):
+                #self.q__.append(Q[i])
+                self.q__.append((Q[i] * np.pi * self.fuelRadius**2) / self.areaMatrix[i]) #W/m3
+        if self.dt != 0:
+            print(f'Fission power transient')
+            t_final_q = 0
+            self.q__ = np.zeros((len(self.timeList), len(Q)))
+            for t, time in enumerate(self.timeList):
+                for i in range(len(Q)):
+                    if time < t_final_q:
+                        self.q__[t][i] = ((self.timeList[t]/t_final_q)*(np.pi * self.fuelRadius**2 * Q[i]) / self.areaMatrix[i])
+                    else:
+                        self.q__[t][i] = ((np.pi * self.fuelRadius**2 * Q[i]) / self.areaMatrix[i])
             
-            #print((np.pi * self.fuelRadius**2 * Q[i]) / self.flowArea)
+            print(f'q__: {self.q__}')
+            plt.plot(self.timeList, self.q__[:, -1])
+            plt.show()
+
 
     def get_Fission_Power(self):
         """
@@ -391,7 +402,7 @@ class DFMclass():
         DI = (1/2) * (P_old[i]*areaMatrix[i] - P_old[i-1]*areaMatrix[i-1]) * ((U_old[i]+ ((epsilon_old[i] * (rho_l_old[i] - rho_g_old[i]) * V_gj_old[i])/ rho_old[i]))+ (U_old[i-1]+ ((epsilon_old[i-1] * (rho_l_old[i-1] - rho_g_old[i-1]) * V_gj_old[i-1])/ rho_old[i-1]) ) )
         DI2 = - (epsilon_old[i]*rho_l_old[i]*rho_g_old[i]*Dhfg[i]*V_gj_old[i]*areaMatrix[i]/rho_old[i]) + (epsilon_old[i-1]*rho_l_old[i-1]*rho_g_old[i-1]*Dhfg[i-1]*V_gj_old[i-1]*areaMatrix[i-1]/rho_old[i-1])
         DT1 = - (self.pressureList[self.timeCount][i%self.nCells] * self.areaMatrix[i] - P_old[i] * areaMatrix[i])*(self.dx/self.dt) + (self.rhoList[self.timeCount][i%self.nCells] * self.enthalpyList[self.timeCount][i%self.nCells] * areaMatrix[i] * (self.dx / self.dt))
-        DM1 = self.q__[i] * self.DV * (self.poro[i]) + DI + DI2 + DT1
+        DM1 = self.q__[self.timeCount][i] * self.DV * (self.poro[i]) + DI + DI2 + DT1
         VAR_VFM_Class = FVM(A00 = 1, A01 = 0, Am0 = - rho_old[-2] * U_old[-2] * areaMatrix[-2] + rho_old[-2] * areaMatrix[-2] * (self.dx / self.dt), Am1 = rho_old[-1] * U_old[-1] * areaMatrix[-1], D0 = self.hInlet, Dm1 = DM1, N_vol = self.nCells, H = self.height)
         VAR_VFM_Class.boundaryFilling()
         for i in range(1,self.nCells -1):
@@ -402,7 +413,7 @@ class DFMclass():
             VAR_VFM_Class.set_ADi(i, ci =  - rho_old[i-1] * U_old[i-1] * areaMatrix[i-1] + rho_old[i] * areaMatrix[i] * (self.dx / self.dt),
                 ai = rho_old[i] * U_old[i] * areaMatrix[i],
                 bi = 0,
-                di =  self.q__[i] * self.DV * (self.poro[i]) + DI + DI2 + DT1)
+                di =  self.q__[self.timeCount][i] * self.DV * (self.poro[i]) + DI + DI2 + DT1)
         
         self.FVM = VAR_VFM_Class
 
@@ -455,10 +466,10 @@ class DFMclass():
         print(f'V_gj_old: {V_gj_old}')
         print(f'Vgj_prime: {Vgj_prime}')
         print(f'C0: {C0}') """
-        print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, rhoList = {self.rhoList[self.timeCount]}')
-        print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, velocityList = {self.velocityList[self.timeCount]}')
-        print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, pressureList = {self.pressureList[self.timeCount]}')
-        print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, enthalpyList = {self.enthalpyList[self.timeCount]}')
+        #print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, rhoList = {self.rhoList[self.timeCount]}')
+        #print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, velocityList = {self.velocityList[self.timeCount]}')
+        #print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, pressureList = {self.pressureList[self.timeCount]}')
+        ##print(f'Inside createSystemVelocityPressureTransient, timeCount: {self.timeCount}, enthalpyList = {self.enthalpyList[self.timeCount]}')
         VAR_VFM_Class = FVM(A00 = 1, A01 = 0, Am0 = 0, Am1 = 1, D0 = self.uInlet, Dm1 = self.pOutlet, N_vol = 2*self.nCells, H = self.height)
         VAR_VFM_Class.boundaryFilling()
         for i in range(1, 2*self.nCells-1):
@@ -503,7 +514,7 @@ class DFMclass():
 
     def calculateResiduals(self):#change les residus
         self.EPSresiduals.append(np.linalg.norm(self.voidFraction[-1] - self.voidFraction[-2]))
-        self.rhoResiduals.append(np.linalg.norm((self.rho[-1] - self.rho[-2])/self.rho[-1]))
+        self.rhoResiduals.append(np.linalg.norm((self.rho[-1] - self.rho[-2])))
         #self.UResiduals.append(np.linalg.norm((self.U[-1] - self.U[-2])/self.U[-1]))
         #self.rhoGResiduals.append(np.linalg.norm(self.rhoG[-1] - self.rhoG[-2]))
         #self.rhoLResiduals.append(np.linalg.norm(self.rhoL[-1] - self.rhoL[-2]))
@@ -588,7 +599,7 @@ class DFMclass():
                 
                 self.U.append(Utemp)
                 self.P.append(Ptemp)
-
+                
                 self.updateInlet()
                 
                 self.createSystemEnthalpy()
@@ -597,7 +608,6 @@ class DFMclass():
                 Htemp = resolveSystem.x
 
                 self.H.append(Htemp)
-
                 updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
                 updateVariables.updateFields()
 
@@ -652,7 +662,6 @@ class DFMclass():
                 self.setInitialFields()
 
                 for k in range(self.maxOuterIteration):
-                    
                     self.createSystemVelocityPressureTransient()
                     """ print(f'A: {self.FVM.A}')
                     print(f'D: {self.FVM.D}') """
@@ -661,7 +670,8 @@ class DFMclass():
                     
                     self.U.append(Utemp)
                     self.P.append(Ptemp)
-
+                    
+                    print(f'P: {Ptemp}, U: {Utemp}')
                     self.updateInlet()
                     
                     self.createSystemEnthalpyTransient()
@@ -670,7 +680,9 @@ class DFMclass():
                     Htemp = resolveSystem.x
 
                     self.H.append(Htemp)
-                    
+                    #print(f'H interation number: {k}: {self.H}')
+                    #print(f'U interation number: {k}: {self.U}')
+                    #print(f'P interation number: {k}: {self.P}')
                     updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
                     updateVariables.updateFields()
 
@@ -686,7 +698,7 @@ class DFMclass():
                     self.Vgj.append(updateVariables.VgjTEMP)
                     self.C0.append(updateVariables.C0TEMP)
                     self.VgjPrime.append(updateVariables.VgjPrimeTEMP)
-                    print(f'rho: {self.rho[-1]}, U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
+                    #(f'rho: {self.rho[-1]}, U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
                     self.sousRelaxation()
                     self.calculateResiduals()
                     if self.I == []:
@@ -735,7 +747,7 @@ class DFMclass():
                 plt.legend()
                 plt.show() """
                     
-                print(f'U: {self.velocityList}, P: {self.pressureList}, H: {self.enthalpyList}')
+                #print(f'U: {self.velocityList}, P: {self.pressureList}, H: {self.enthalpyList}')
 
             plt.ioff()
             plt.show()

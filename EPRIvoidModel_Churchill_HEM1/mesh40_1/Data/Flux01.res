@@ -1,0 +1,204 @@
+
+          *****   FLUX-DISTRIBUTION OVER THE REACTOR CORE   *****
+
+                     NX= 1,  NY= 1,  NZ=40,  GROUP #01
+
+
+   PLANE-Y #01     PLANE-Z #01
+
+   4.56505866E+14
+
+
+   PLANE-Y #01     PLANE-Z #02
+
+   9.13474046E+14
+
+
+   PLANE-Y #01     PLANE-Z #03
+
+   1.11019811E+15
+
+
+   PLANE-Y #01     PLANE-Z #04
+
+   1.12923508E+15
+
+
+   PLANE-Y #01     PLANE-Z #05
+
+   1.06527537E+15
+
+
+   PLANE-Y #01     PLANE-Z #06
+
+   9.66324893E+14
+
+
+   PLANE-Y #01     PLANE-Z #07
+
+   8.56176766E+14
+
+
+   PLANE-Y #01     PLANE-Z #08
+
+   7.47001247E+14
+
+
+   PLANE-Y #01     PLANE-Z #09
+
+   6.44836659E+14
+
+
+   PLANE-Y #01     PLANE-Z #10
+
+   5.52372858E+14
+
+
+   PLANE-Y #01     PLANE-Z #11
+
+   4.70465315E+14
+
+
+   PLANE-Y #01     PLANE-Z #12
+
+   3.98957734E+14
+
+
+   PLANE-Y #01     PLANE-Z #13
+
+   3.37178924E+14
+
+
+   PLANE-Y #01     PLANE-Z #14
+
+   2.84205234E+14
+
+
+   PLANE-Y #01     PLANE-Z #15
+
+   2.39047897E+14
+
+
+   PLANE-Y #01     PLANE-Z #16
+
+   2.00720146E+14
+
+
+   PLANE-Y #01     PLANE-Z #17
+
+   1.68300022E+14
+
+
+   PLANE-Y #01     PLANE-Z #18
+
+   1.40952941E+14
+
+
+   PLANE-Y #01     PLANE-Z #19
+
+   1.17935566E+14
+
+
+   PLANE-Y #01     PLANE-Z #20
+
+   9.85958984E+13
+
+
+   PLANE-Y #01     PLANE-Z #21
+
+   8.23684466E+13
+
+
+   PLANE-Y #01     PLANE-Z #22
+
+   6.87671869E+13
+
+
+   PLANE-Y #01     PLANE-Z #23
+
+   5.73777600E+13
+
+
+   PLANE-Y #01     PLANE-Z #24
+
+   4.78465984E+13
+
+
+   PLANE-Y #01     PLANE-Z #25
+
+   3.98735788E+13
+
+
+   PLANE-Y #01     PLANE-Z #26
+
+   3.32056798E+13
+
+
+   PLANE-Y #01     PLANE-Z #27
+
+   2.76294260E+13
+
+
+   PLANE-Y #01     PLANE-Z #28
+
+   2.29647959E+13
+
+
+   PLANE-Y #01     PLANE-Z #29
+
+   1.90601044E+13
+
+
+   PLANE-Y #01     PLANE-Z #30
+
+   1.57880114E+13
+
+
+   PLANE-Y #01     PLANE-Z #31
+
+   1.30411932E+13
+
+
+   PLANE-Y #01     PLANE-Z #32
+
+   1.07291607E+13
+
+
+   PLANE-Y #01     PLANE-Z #33
+
+   8.77543345E+12
+
+
+   PLANE-Y #01     PLANE-Z #34
+
+   7.11538088E+12
+
+
+   PLANE-Y #01     PLANE-Z #35
+
+   5.69371001E+12
+
+
+   PLANE-Y #01     PLANE-Z #36
+
+   4.46313005E+12
+
+
+   PLANE-Y #01     PLANE-Z #37
+
+   3.38245897E+12
+
+
+   PLANE-Y #01     PLANE-Z #38
+
+   2.41557098E+12
+
+
+   PLANE-Y #01     PLANE-Z #39
+
+   1.53007070E+12
+
+
+   PLANE-Y #01     PLANE-Z #40
+
+   6.96853070E+11

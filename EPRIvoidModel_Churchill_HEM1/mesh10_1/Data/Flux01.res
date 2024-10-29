@@ -1,0 +1,54 @@
+
+          *****   FLUX-DISTRIBUTION OVER THE REACTOR CORE   *****
+
+                     NX= 1,  NY= 1,  NZ=10,  GROUP #01
+
+
+   PLANE-Y #01     PLANE-Z #01
+
+   7.79467241E+14
+
+
+   PLANE-Y #01     PLANE-Z #02
+
+   6.36221492E+14
+
+
+   PLANE-Y #01     PLANE-Z #03
+
+   3.20833889E+14
+
+
+   PLANE-Y #01     PLANE-Z #04
+
+   1.48712303E+14
+
+
+   PLANE-Y #01     PLANE-Z #05
+
+   6.69922204E+13
+
+
+   PLANE-Y #01     PLANE-Z #06
+
+   2.98204927E+13
+
+
+   PLANE-Y #01     PLANE-Z #07
+
+   1.31782421E+13
+
+
+   PLANE-Y #01     PLANE-Z #08
+
+   5.75205697E+12
+
+
+   PLANE-Y #01     PLANE-Z #09
+
+   2.38074829E+12
+
+
+   PLANE-Y #01     PLANE-Z #10
+
+   6.95090086E+11

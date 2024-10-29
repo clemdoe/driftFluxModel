@@ -263,7 +263,7 @@ if compute_case_genfoam_NEW_Ex1_12223:
 
     ############ Nuclear Parameters ###########
     ## Fission parameters
-    qFiss = 1943301220 * ((np.pi * waterRadius**2) - (np.pi * cladRadius**2)) / (Iz1 * np.pi * fuelRadius**2) #W/m3
+    qFiss = 1943301220 #W/m3
     #qFiss = 1943301220 # W/m3
     ## Material parameters
     kFuel = 4.18 # W/m.K, TECHNICAL REPORTS SERIES No. 59 : Thermal Conductivity of Uranium Dioxide, IAEA, VIENNA, 1966

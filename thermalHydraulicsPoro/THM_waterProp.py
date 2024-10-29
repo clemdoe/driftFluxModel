@@ -61,7 +61,7 @@ class statesVariables():
         self.g = 9.81
         self.D_h = D_h
         self.areaMatrix = areaMatrix
-        self.K_loss = 0 #0.17
+        self.K_loss = 0#0.32
         self.Dz = Dz
         self.DV = DV
 
@@ -325,7 +325,7 @@ class statesVariables():
         U = self.U[i]
         C0 = self.C0TEMP[i]
         Vgj = self.VgjTEMP[i]
-        Vgj_prime = Vgj + (C0 - 1) * U
+        Vgj_prime = Vgj + (C0-1) * U
         return Vgj_prime
     
     def getHfg(self, i):
@@ -368,6 +368,8 @@ class statesVariables():
 
         if self.P2Pcorel == 'base': #Validated
             phi2phi = 1 + 3*epsilon
+        elif self.P2Pcorel == 'lockhartMartinelli':
+            return np.sqrt(self.lockhartMartinelli(i))
         elif self.P2Pcorel == 'HEM1': #Validated
             phi2phi = (rho/rho_l)*((rho_l/rho_g)*x_th + +1)
         elif self.P2Pcorel == 'HEM2': #Validated
@@ -410,8 +412,27 @@ class statesVariables():
         return rho * abs(Ul) * self.D_h[i] / m
     
     def getUl(self, i):
-        return self.U[i] + (self.voidFractionTEMP[i] / ( 1- self.voidFractionTEMP[i])) * (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
+        print(self.VgjPrimeTEMP[i])
+        return self.U[i] + (self.voidFractionTEMP[i] / ( 1 - self.voidFractionTEMP[i])) * (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
     
     def getUg(self, i):
         return self.U[i] + (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
 
+    def lockhartMartinelli(self, i):
+        Ul = self.getUl(i)
+        Ug = self.getUg(i)
+        Um = self.U[i]
+        print(f'Ul : {Ul}, Ug : {Ug}, Um : {Um}')
+        rhom = self.rhoTEMP[i]
+        rho_l = self.rholTEMP[i]
+        rho_g = self.rhogTEMP[i]
+        X = np.sqrt(rho_l/rho_g)*(Ul/Ug)
+        return 1 +  X**2 + 20* X
+    
+    def getVelocity(self):
+        Ul = []
+        Ug = []
+        for i in range(self.nCells):
+            Ul.append(self.getUl(i))
+            Ug.append(self.getUg(i))
+        return Ul, Ug
