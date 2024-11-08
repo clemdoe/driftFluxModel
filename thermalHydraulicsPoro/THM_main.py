@@ -10,6 +10,8 @@ from iapws import IAPWS97
 import matplotlib.pyplot as plt
 import pandas as pd
 from openpyxl import Workbook
+import os
+import re
 
 class Version5_THM_prototype:
     def __init__(self, case_name, canal_type,
@@ -830,6 +832,24 @@ class plotting:
         ax3.set_ylabel("Density in kg/m^3")
         ax3.set_title("Density distribution in coolant canal")
         ax3.legend(loc="best")
+
+
+        fig4, ax4 = plt.subplots()
+        for i in range(len(self.caseList)):
+            ax4.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.P[-1], label=self.caseList[i].voidFractionCorrel)
+        ax4.set_xlabel("Axial position in m")
+        ax4.set_ylabel("Pressure in Pa")
+        ax4.set_title("Pressure distribution in coolant canal")
+        ax4.legend(loc="best")
+        plt.show()
+
+        fig5, ax5 = plt.subplots()
+        for i in range(len(self.caseList)):
+            ax4.plot(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.U[-1], label=self.caseList[i].voidFractionCorrel)
+        ax5.set_xlabel("Axial position in m")
+        ax5.set_ylabel("Velocity in m/s")
+        ax5.set_title("Velocity distribution in coolant canal")
+        ax5.legend(loc="best")
         plt.show()
 
 
@@ -1149,7 +1169,7 @@ class plotting:
         for i in range(len(data[7])):
             data[7][i] = (1/(1-genFoamVolumeFraction)) * data[7][i]
 
-        genfoamCASE = [data[0], data[3], data[7], data[3], data[1], data[5]]
+        genfoamCASE = [data[0], data[3], data[7], data[4], data[1], data[5]]
 
         if compParam == 'voidFractionCorrel':
             title = f"Methode numérique: {self.caseList[0].numericalMethod}, \n Correlation multiplicateur biphasique: {self.caseList[0].convection_sol.P2Pcorel}, \n Correlation facteur de friction: {self.caseList[0].convection_sol.frfaccorel}"
@@ -1179,7 +1199,7 @@ class plotting:
                 fig3, ax3 = plt.subplots()
                 for i in range(len(self.caseList)):
                     ax3.step(self.caseList[i].convection_sol.z_mesh, self.caseList[i].convection_sol.rho[-1], label=self.caseList[i].voidFractionCorrel)
-                #ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
+                ax3.plot(genfoamCASE[0], genfoamCASE[3], label="GenFoam")
                 ax3.set_xlabel("Axial position in m")
                 ax3.set_ylabel("Density in kg/m^3")
                 ax3.set_title(title)

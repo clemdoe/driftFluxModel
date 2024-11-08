@@ -106,6 +106,8 @@ class statesVariables():
     def modBestion(self):
         self.rholTEMP, self.rhogTEMP, self.rhoTEMP, self.voidFractionTEMP, self.DhfgTEMP, self.fTEMP, self.areaMatrix_1TEMP, self.areaMatrix_2TEMP, self.areaMatrix_2TEMP, self.VgjTEMP, self.C0TEMP, self.VgjPrimeTEMP = np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells)
         self.voidFractionOld = self.voidFraction
+        self.Ul = np.ones(self.nCells)
+        self.Ug = np.ones(self.nCells)
         for i in range(self.nCells):
             self.rholTEMP[i], self.rhogTEMP[i], self.rhoTEMP[i] = self.getDensity(i)
             self.C0TEMP[i] = self.getC0(i)
@@ -119,10 +121,14 @@ class statesVariables():
             self.rhoTEMP[i] = self.getDensity(i)[2]
             self.fTEMP[i] = self.getFrictionFactor(i)
             self.areaMatrix_1TEMP[i], self.areaMatrix_2TEMP[i] = self.getAreas(i)
+            self.Ul[i] = self.getUl(i)
+            self.Ug[i] = self.getUg(i)
     
     def HEM1(self):
         self.rholTEMP, self.rhogTEMP, self.rhoTEMP, self.voidFractionTEMP, self.DhfgTEMP, self.fTEMP, self.areaMatrix_1TEMP, self.areaMatrix_2TEMP, self.areaMatrix_2TEMP, self.VgjTEMP, self.C0TEMP, self.VgjPrimeTEMP = np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells)
         self.voidFractionOld = self.voidFraction
+        self.Ul = np.ones(self.nCells)
+        self.Ug = np.ones(self.nCells)
         for i in range(self.nCells):
             self.rholTEMP[i], self.rhogTEMP[i], self.rhoTEMP[i] = self.getDensity(i)
             self.C0TEMP[i] = self.getC0(i)
@@ -136,10 +142,14 @@ class statesVariables():
             self.rhoTEMP[i] = self.getDensity(i)[2]
             self.fTEMP[i] = self.getFrictionFactor(i)
             self.areaMatrix_1TEMP[i], self.areaMatrix_2TEMP[i] = self.getAreas(i)
+            self.Ul[i] = self.getUl(i)
+            self.Ug[i] = self.getUg(i)
 
     def GEramp(self):
         self.rholTEMP, self.rhogTEMP, self.rhoTEMP, self.voidFractionTEMP, self.DhfgTEMP, self.fTEMP, self.areaMatrix_1TEMP, self.areaMatrix_2TEMP, self.areaMatrix_2TEMP, self.VgjTEMP, self.C0TEMP, self.VgjPrimeTEMP = np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells)
         self.voidFractionOld = self.voidFraction
+        self.Ul = np.ones(self.nCells)
+        self.Ug = np.ones(self.nCells)
         for i in range(self.nCells):
             self.rholTEMP[i], self.rhogTEMP[i], self.rhoTEMP[i] = self.getDensity(i)
             self.C0TEMP[i] = self.getC0(i)
@@ -167,10 +177,14 @@ class statesVariables():
 
             self.fTEMP[i] = self.getFrictionFactor(i)
             self.areaMatrix_1TEMP[i], self.areaMatrix_2TEMP[i] = self.getAreas(i)
+            self.Ul[i] = self.getUl(i)
+            self.Ug[i] = self.getUg(i)
 
     def EPRIvoidModel(self):
         self.rholTEMP, self.rhogTEMP, self.rhoTEMP, self.voidFractionTEMP, self.DhfgTEMP, self.fTEMP, self.areaMatrix_1TEMP, self.areaMatrix_2TEMP, self.areaMatrix_2TEMP, self.VgjTEMP, self.C0TEMP, self.VgjPrimeTEMP = np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells), np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells),np.ones(self.nCells)
         self.voidFractionOld = self.voidFraction
+        self.Ul = np.ones(self.nCells)
+        self.Ug = np.ones(self.nCells)
         for i in range(self.nCells):
             self.rholTEMP[i], self.rhogTEMP[i], self.rhoTEMP[i] = self.getDensity(i)
             self.C0TEMP[i] = self.getC0(i)
@@ -198,6 +212,8 @@ class statesVariables():
 
             self.fTEMP[i] = self.getFrictionFactor(i)
             self.areaMatrix_1TEMP[i], self.areaMatrix_2TEMP[i] = self.getAreas(i)
+            self.Ul[i] = self.getUl(i)
+            self.Ug[i] = self.getUg(i)
 
     def getDensity(self, i):
         vapor = IAPWS97(P = self.P[i]*(10**(-6)), x = 1)
@@ -224,9 +240,9 @@ class statesVariables():
             rho_l = self.rholTEMP[i]
             rho_g = self.rhogTEMP[i]
             if x_th == 0:
-                return 0.0001
+                return 0
             elif x_th == 1:
-                return 0.99
+                return 1
             else:
                 return (x_th * rho_l)/(x_th * rho_l + (1 - x_th) * rho_g)
         elif correl == 'paths':
@@ -237,9 +253,9 @@ class statesVariables():
             V_gj = self.VgjTEMP[i]
             C0 = self.C0TEMP[i]
             if x_th == 0:
-                return 0.0001
+                return 0
             elif x_th == 1:
-                return 0.99
+                return 1
             else:
                 return x_th / (C0 * (x_th + (rho_g / rho_l) * (1 - x_th)) + (rho_g * V_gj) / (rho_l * u))
     
@@ -338,9 +354,11 @@ class statesVariables():
         P = self.P[i]
         Re = self.getReynoldsNumber(i)
 
+
         if self.frfaccorel == 'base': #Validated
             return 1
-        
+        elif self.frfaccorel == "null": #Validated
+            return 0
         elif self.frfaccorel == 'blasius': #Validated
             return 0.316 * Re**(-0.25)
         elif self.frfaccorel == 'Churchill': #Validated
@@ -365,7 +383,8 @@ class statesVariables():
         rho = self.rhoTEMP[i]
         P = self.P[i]
         epsilon = self.voidFractionTEMP[i]
-
+        if epsilon <= 0.001:
+            return 0
         if self.P2Pcorel == 'base': #Validated
             phi2phi = 1 + 3*epsilon
         elif self.P2Pcorel == 'lockhartMartinelli':
@@ -412,8 +431,7 @@ class statesVariables():
         return rho * abs(Ul) * self.D_h[i] / m
     
     def getUl(self, i):
-        print(self.VgjPrimeTEMP[i])
-        return self.U[i] + (self.voidFractionTEMP[i] / ( 1 - self.voidFractionTEMP[i])) * (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
+        return self.U[i] - (self.voidFractionTEMP[i] / ( 1 - self.voidFractionTEMP[i])) * (self.rhogTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
     
     def getUg(self, i):
         return self.U[i] + (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
@@ -422,7 +440,6 @@ class statesVariables():
         Ul = self.getUl(i)
         Ug = self.getUg(i)
         Um = self.U[i]
-        print(f'Ul : {Ul}, Ug : {Ug}, Um : {Um}')
         rhom = self.rhoTEMP[i]
         rho_l = self.rholTEMP[i]
         rho_g = self.rhogTEMP[i]

@@ -18,15 +18,15 @@ if compute_case_multiphys:
     If = 8
     I1 = 3
     # Sensitivity to the meshing parameters
-    Iz1 = 75 # number of control volumes in the axial direction, added 70 for comparison with GeN-Foam
+    Iz1 = 70 # number of control volumes in the axial direction, added 70 for comparison with GeN-Foam
     # Iz1 = 10, 20, 40, 50, 70, 80 and 160 are supported for the DONJON solution
 
 
     ########## Choice of Thermalhydraulics correlation ##########
-    voidFractionCorrel = 'EPRIvoidModel' # 'modBestion', 'HEM1', 'GEramp', 'EPRIvoidModel'
+    voidFractionCorrel = 'modBestion' # 'modBestion', 'HEM1', 'GEramp', 'EPRIvoidModel'
     frfaccorel = "blasius" # 'base', 'blasius', 'Churchill', 'Churchill_notOK' ?
-    P2Pcorel = "lockhartMartinelli" # 'base', 'HEM1', 'HEM2', 'MNmodel'
-    numericalMethod = "FVM" # "FVM": Solves the system using matrix inversion with preconditioning.
+    P2Pcorel = "lockhartMartinelli" # 'base', 'HEM1', 'HEM2', 'MNmodel', "lockhartMartinelli"
+    numericalMethod = "BiCG" # "FVM": Solves the system using matrix inversion with preconditioning.
                             # "GaussSiedel" : Applies the Gauss-Seidel iterative solver.
                             # "BiCG" : Uses the BiConjugate Gradient method for solving non-symmetric or indefinite matrices.
                             # "BiCGStab" : Applies the BiCGStab (BiConjugate Gradient Stabilized) method to ensure faster and more stable convergence.
@@ -34,7 +34,7 @@ if compute_case_multiphys:
     ########## Thermal hydraulics parameters ##########
     ## Geometric parameters
     canalType = "square" # "square", "cylindrical"
-    pitch = 1.295e-2 # m : ATRIUM10 pincell pitch   0.0126 #
+    pitch =1.296e-2 #1.295e-2 # m : ATRIUM10 pincell pitch   0.0126 #
     fuelRadius = 0.4435e-2 # m : fuel rod radius
     gapRadius = 0.4520e-2 # m : expansion gap radius : "void" between fuel and clad - equivalent to inner clad radius
     cladRadius = 0.5140e-2 # m : clad external radius
@@ -60,7 +60,7 @@ if compute_case_multiphys:
 
     ############ Nuclear Parameters ###########
     # Number of fuel rods and assemblies for a small modular Boiling Water Reactor core
-    qFiss_init_1 = [0,0,0,0,0,2.583436219965613782e+08,
+    qFiss_init_1 = [2.583436219965613782e+08,
 4.641112940730458498e+08,
 6.431210489477704763e+08,
 8.016168845533045530e+08,
@@ -131,7 +131,7 @@ if compute_case_multiphys:
 1.962761971753485873e+07,
 1.246770629004373029e+07,
 ]
-    
+
     qFiss_init_8 = [0,0,0,0,0,4.788891356452584267e+06,
 8.732191535550605506e+06,
 1.235867031913201138e+07,
@@ -203,10 +203,80 @@ if compute_case_multiphys:
 8.639453782079903409e+06,
 4.737157247431593947e+06]
 
+    qFiss_init_2 = [0,0,0,0,0,6.756780329588347673e+07,
+1.225511900859650373e+08,
+1.721201588364999592e+08,
+2.184756990877254605e+08,
+2.622164325068090856e+08,
+3.033417810590132475e+08,
+3.416546348987942934e+08,
+3.769016814184232950e+08,
+4.088274292638525367e+08,
+4.371881700968404412e+08,
+4.617434414665185809e+08,
+4.822272584651400447e+08,
+4.982545610289983749e+08,
+5.090542952822619677e+08,
+5.128151671423504353e+08,
+5.028908442671745420e+08,
+4.816494460485277772e+08,
+4.594450419569328427e+08,
+4.375400598594470024e+08,
+4.159057314118189216e+08,
+3.953037285414503813e+08,
+3.757576172799536586e+08,
+3.572386292830754519e+08,
+3.397147725512966514e+08,
+3.229261537737228274e+08,
+3.069688156452266574e+08,
+2.918536963616145849e+08,
+2.775041173917204738e+08,
+2.638685891796860397e+08,
+2.508966003822812438e+08,
+2.385466214268116951e+08,
+2.267815691616494060e+08,
+2.155683844462197423e+08,
+2.048766982246900797e+08,
+1.946787425975481272e+08,
+1.849503512663356066e+08,
+1.756663352557563484e+08,
+1.668055073694643378e+08,
+1.583327186489859819e+08,
+1.501975244474098980e+08,
+1.424295156968826056e+08,
+1.350023918168404102e+08,
+1.278944542725161612e+08,
+1.210865389891439080e+08,
+1.145611492998585105e+08,
+1.083020779998999685e+08,
+1.022940071687185913e+08,
+9.652241924155846238e+07,
+9.097347473287303746e+07,
+8.563391219185398519e+07,
+8.049108710861487687e+07,
+7.553284407958579063e+07,
+7.074753348159296811e+07,
+6.612389475330245495e+07,
+6.165119534588532895e+07,
+5.731893058958909661e+07,
+5.311704601479417831e+07,
+4.903593179398689419e+07,
+4.506573354649534076e+07,
+4.119738613138597459e+07,
+3.742183274476308376e+07,
+3.373002214075976610e+07,
+3.011286972534953058e+07,
+2.656079624016347900e+07,
+2.306309831600875035e+07,
+1.960652006010331959e+07,
+1.617248237995365076e+07,
+1.273136933229391277e+07,
+9.230969512592667714e+06,
+5.572810326342738234e+06]
 
     case1 = Version5_THM_prototype("Initialization of BWR Pincell equivalent canal", canalType, pitch, fuelRadius, gapRadius, cladRadius, 
                             height, tInlet, pOutlet, massFlowRate, qFiss_init_1, kFuel, Hgap, kClad, Iz1, If, I1, zPlotting, 
-                            solveConduction, dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, 
+                            solveConduction, dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = 'EPRIvoidModel',
                             numericalMethod = numericalMethod)
     
     print(f'U: {case1.convection_sol.U[-1]}')

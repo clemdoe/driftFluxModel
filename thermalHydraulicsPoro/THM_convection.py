@@ -101,13 +101,13 @@ class DFMclass():
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         
         if self.canalType == 'square':
-            self.Dh =  4 * self.flowArea / ( 2*np.pi * self.cladRadius) #2*self.cote +
+            self.Dh =  4 * self.flowArea / (2*self.cote + 2*np.pi * self.cladRadius) #
         elif self.canalType == 'cylindrical':
             self.Dh = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
 
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
-        self.epsilonTarget = 0.18
+        self.epsilonTarget = 0
         self.K_loss = 0.17
         self.dx = self.height / self.nCells
 
@@ -376,7 +376,7 @@ class DFMclass():
             VAR_VFM_Class.set_ADi(i, ci =  - rho_old[i-1] * U_old[i-1] * areaMatrix[i-1],
                 ai = rho_old[i] * U_old[i] * areaMatrix[i],
                 bi = 0,
-                di =  self.q__[i] * self.DV * (self.poro[i]) + DI + DI2)
+                di =  self.q__[i] * self.DV * (self.poro[i]) + DI2 + DI)
         
         self.FVM = VAR_VFM_Class
 
@@ -641,8 +641,9 @@ class DFMclass():
                     raise ValueError('Convergence not reached in the resolution of the drift flux model, not enough iterations. k = ', k)
 
 
+            self.Ul = updateVariables.Ul
+            self.Ug = updateVariables.Ug
             #print(f'U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
-
             #plt.ioff()
             #plt.show()
 
@@ -793,6 +794,12 @@ class DFMclass():
         U = VAR[:self.nCells]
         P = VAR[self.nCells:]
         return U, P
+    
+    def getPhasesVelocity(self):
+        water = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
+        Ul = [water.getUl(i) for i in range(self.nCells)]
+        Ug = [water.getUg(i) for i in range(self.nCells)]
+        return Ul, Ug
     
     def createBoundaryEnthalpy(self):
         for i in range(self.nCells):
