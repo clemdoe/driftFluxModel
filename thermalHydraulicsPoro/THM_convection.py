@@ -87,7 +87,7 @@ class DFMclass():
         if self.canalType == 'square':
             self.flowArea = self.cote ** 2 - np.pi * self.cladRadius ** 2
         elif self.canalType == 'cylindrical':
-            self.waterGap = self.cote -  self.cladRadius#Gap between the clad and the water m
+            self.waterGap = self.cote -  self.cladRadius #Gap between the clad and the water m
             self.waterRadius =  self.cote #External radius of the water m
             self.flowArea = np.pi * self.waterRadius ** 2 - np.pi * self.cladRadius ** 2
 
@@ -101,14 +101,14 @@ class DFMclass():
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         
         if self.canalType == 'square':
-            self.Dh =  4 * self.flowArea / (2*self.cote + 2*np.pi * self.cladRadius) #
+            self.Dh =  4 * self.flowArea / ( 2*np.pi * self.cladRadius) #2*self.cote +
         elif self.canalType == 'cylindrical':
             self.Dh = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
 
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
         self.epsilonTarget = 0
-        self.K_loss = 0.17
+        self.K_loss = 0.0
         self.dx = self.height / self.nCells
 
         #Porous media parameters
@@ -199,7 +199,7 @@ class DFMclass():
             self.H = [np.ones(self.nCells)*self.hInlet]
             self.voidFraction = [np.array([i*self.epsilonTarget/self.nCells for i in range(self.nCells)])]
 
-            updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
+            updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz, self.q__, self.qFlow, self.fuelRadius,  self.cote/2)
             updateVariables.createFields()
                 
             self.xTh = [np.ones(self.nCells)]
@@ -222,7 +222,7 @@ class DFMclass():
                 self.H = [self.enthalpyList[self.timeCount]]
                 self.voidFraction = [self.voidFractionList[self.timeCount]]
 
-                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
+                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz, self.q__, self.qFlow, self.fuelRadius, self.cote/2)
                 updateVariables.createFields()
 
                 self.xTh = [np.ones(self.nCells)]
@@ -575,6 +575,7 @@ class DFMclass():
         self.uInlet = self.qFlow / (self.flowArea * self.rhoInlet) #m/s
         #print(f'New inlet velocity: {self.uInlet}')
         #Update hInlet
+        print(f"uInlet:{self.uInlet}")
         self.hInlet = IAPWS97(T = self.tInlet, P = self.P[-1][0]*10**(-6)).h*1000 #J/kg
 
     
@@ -600,7 +601,7 @@ class DFMclass():
                 self.U.append(Utemp)
                 self.P.append(Ptemp)
                 
-                self.updateInlet()
+                #self.updateInlet()
                 
                 self.createSystemEnthalpy()
                 resolveSystem = numericalResolution(self.FVM, self.H[-1], self.epsInnerIteration, self.maxInnerIteration, self.numericalMethod)
@@ -608,7 +609,7 @@ class DFMclass():
                 Htemp = resolveSystem.x
 
                 self.H.append(Htemp)
-                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
+                updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz, self.q__, self.qFlow, self.fuelRadius, self.cote/2)
                 updateVariables.updateFields()
 
                 self.xTh.append(updateVariables.xThTEMP)
@@ -643,6 +644,7 @@ class DFMclass():
 
             self.Ul = updateVariables.Ul
             self.Ug = updateVariables.Ug
+            self.Rel = updateVariables.Rel
             #print(f'U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
             #plt.ioff()
             #plt.show()
@@ -671,8 +673,6 @@ class DFMclass():
                     
                     self.U.append(Utemp)
                     self.P.append(Ptemp)
-                    
-                    print(f'P: {Ptemp}, U: {Utemp}')
                     self.updateInlet()
                     
                     self.createSystemEnthalpyTransient()
@@ -684,7 +684,7 @@ class DFMclass():
                     #print(f'H interation number: {k}: {self.H}')
                     #print(f'U interation number: {k}: {self.U}')
                     #print(f'P interation number: {k}: {self.P}')
-                    updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
+                    updateVariables = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz, self.q__, self.fuelRadius, self.cote/2)
                     updateVariables.updateFields()
 
                     self.xTh.append(updateVariables.xThTEMP)
@@ -796,7 +796,7 @@ class DFMclass():
         return U, P
     
     def getPhasesVelocity(self):
-        water = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz)
+        water = statesVariables(self.U[-1], self.P[-1], self.H[-1], self.voidFraction[-1], self.D_h, self.areaMatrix, self.DV, self.voidFractionCorrel, self.frfaccorel, self.P2Pcorel, self.Dz, self.q__, self.qFlow, self.fuelRadius, self.cote/2)
         Ul = [water.getUl(i) for i in range(self.nCells)]
         Ug = [water.getUg(i) for i in range(self.nCells)]
         return Ul, Ug

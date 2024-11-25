@@ -18,7 +18,7 @@ if compute_case_multiphys:
     If = 8
     I1 = 3
     # Sensitivity to the meshing parameters
-    Iz1 = 70 # number of control volumes in the axial direction, added 70 for comparison with GeN-Foam
+    Iz1 = 75 # number of control volumes in the axial direction, added 70 for comparison with GeN-Foam
     # Iz1 = 10, 20, 40, 50, 70, 80 and 160 are supported for the DONJON solution
 
 
@@ -273,9 +273,10 @@ if compute_case_multiphys:
 1.273136933229391277e+07,
 9.230969512592667714e+06,
 5.572810326342738234e+06]
+    print(f'len qFiss_init_2 : {len(qFiss_init_2)}')
 
     case1 = Version5_THM_prototype("Initialization of BWR Pincell equivalent canal", canalType, pitch, fuelRadius, gapRadius, cladRadius, 
-                            height, tInlet, pOutlet, massFlowRate, qFiss_init_1, kFuel, Hgap, kClad, Iz1, If, I1, zPlotting, 
+                            height, tInlet, pOutlet, massFlowRate, qFiss_init_2, kFuel, Hgap, kClad, Iz1, If, I1, zPlotting, 
                             solveConduction, dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = 'EPRIvoidModel',
                             numericalMethod = numericalMethod)
     
@@ -284,7 +285,7 @@ if compute_case_multiphys:
     print(f'Tsurf moy : {np.mean(case1.Tsurf)}')
     plotter = plotting([case1]) #
     genFoamVolumeFraction = 0.494922
-    #plotter.plotSimple()
+    plotter.plotSimple()
     print(f'Twater : {case1.convection_sol.T_water}')   
     plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsPoro\resultMultiPhys.xlsx", 'voidFractionCorrel', [True, True, True, True, True, True], genFoamVolumeFraction)
     plotter.writeResults(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\resultsDFM.xlsx")
