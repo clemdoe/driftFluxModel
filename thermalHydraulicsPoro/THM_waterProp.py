@@ -61,7 +61,7 @@ class statesVariables():
         self.g = 9.81
         self.D_h = D_h
         self.areaMatrix = areaMatrix
-        self.K_loss = 0#0.32
+        self.K_loss = 0#0.1
         self.Dz = Dz
         self.DV = DV
         self.q__ = q__
@@ -235,6 +235,11 @@ class statesVariables():
             rho = rho_l
             return rho_l, rho_g, rho
         else: """
+        """ if self.voidFractionTEMP[i] <= 0.001:
+            rho_g = 0
+            rho_l = 1/IAPWS97(P = self.P[i]*(10**(-6)), x = 0).v
+            rho = rho_l
+            return rho_l, rho_g, rho """
         vapor = IAPWS97(P = self.P[i]*(10**(-6)), x = 1)
         liquid = IAPWS97(P = self.P[i]*(10**(-6)), x = 0)
         rho_g = vapor.rho
@@ -444,15 +449,15 @@ class statesVariables():
     def getFrictionFactor(self, i):
         U = self.U[i]
         P = self.P[i]
-        Re = self.getReynoldsNumber(i)
-
+        Re = self.getReynoldsNumberLiquid(i)
 
         if self.frfaccorel == 'base': #Validated
             return 0.003
         elif self.frfaccorel == "null": #Validated
             return 0
         elif self.frfaccorel == 'blasius': #Validated
-            return 0.316 * Re**(-0.25)
+            #return 0.316 * Re**(-0.25)
+            return 0.079 * Re**(-0.25)
         elif self.frfaccorel == 'Churchill': #Validated
             Ra = 0.4 * (10**(-6)) #Roughness
             R = Ra / self.D_h[i]
@@ -522,6 +527,13 @@ class statesVariables():
         P = self.P[i]
         m = IAPWS97(P = P*(10**(-6)), x = 0).mu
         return rho * abs(Ul) * self.D_h[i] / m
+
+    def getReynoldsNumberVapor(self, i):
+        Ug = self.getUg(i)
+        rho = self.rhogTEMP[i]
+        P = self.P[i]
+        m = IAPWS97(P = P*(10**(-6)), x = 1).mu
+        return rho * abs(Ug) * self.D_h[i] / m
     
     def getUl(self, i):
         return self.U[i] - (self.voidFractionTEMP[i] / ( 1 - self.voidFractionTEMP[i])) * (self.rhogTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
@@ -538,14 +550,15 @@ class statesVariables():
         rho_g = self.rhogTEMP[i]
         mul = IAPWS97(P = self.P[i]*(10**(-6)), x = 0).Liquid.mu
         mulg = IAPWS97(P = self.P[i]*(10**(-6)), x = 1).Vapor.mu
-        #X = np.sqrt((rho_l/rho_g)*((mul/mulg)**0.2)*((1-self.xThTEMP[i])/self.xThTEMP[i])**1.8)
-        #Phil = 1+20/X+1/X**2
-        #Phig = 1+X**2+20*X
+
+        Rel = self.getReynoldsNumberLiquid(i)
+        Reg = self.getReynoldsNumberVapor(i)
+        fliq = 0.079 * (Rel)**(-0.25)
+        fgas = 0.079 * (Reg)**(-0.25)
+
         return ((1.2*(rho_l/rho_g - 1)*self.xThTEMP[i]**0.824 + 1)*(rhom/rho_l)*(rho_l/rho_g))**2#*self.xThTEMP[i] + 1)**0.25
-        #return Phig * self.voidFractionTEMP[i] + Phil * (1 - self.voidFractionTEMP[i])
-        #return Phig
-        #X = np.sqrt(rho_l/rho_g)*(Ul/Ug)
-        #return 1 +  X**2 + 20* X
+        #X = (fliq*rho_l*Ul**2)/(fgas*rho_g*Ug**2)
+        #return 1+20/X
     
     def getVelocity(self):
         Ul = []

@@ -1,0 +1,120 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2406                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       volScalarField;
+    location    "0.6/fluidRegion";
+    object      alpha.vapour;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   nonuniform List<scalar> 
+70
+(
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0.000698347
+0.00198693
+0.0038309
+0.00612976
+0.00882327
+0.0118683
+0.0152237
+0.0188524
+0.0227204
+0.0267962
+0.0310505
+0.0354563
+0.0399882
+0.0446222
+0.049336
+0.0541086
+0.0589202
+0.0637523
+0.0685875
+0.0734142
+0.0782677
+0.0831114
+0.0878845
+0.092561
+0.097128
+0.101577
+0.105875
+0.110017
+0.114013
+0.11787
+0.121596
+0.125196
+0.128697
+0.131876
+)
+;
+
+boundaryField
+{
+    inlet
+    {
+        type            inletOutlet;
+        phi             phi.vapour;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        phi             phi.vapour;
+        inletValue      uniform 0;
+        value           uniform 0.131876;
+    }
+    fixedWalls
+    {
+        type            zeroGradient;
+    }
+}
+
+
+// ************************************************************************* //

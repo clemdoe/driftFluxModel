@@ -22,8 +22,8 @@ waterGap = 0.5*10**(-3) #Gap between the clad and the water m
 Poro = 0.5655077285
 cote = 0.0157 * np.sqrt(Poro)
 
-DFM1 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, cote, 'FVM', 'base', 'base', 'GEramp', 500000000, 'constant')
-DFM2 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, cote, 'FVM', 'blasius', 'base', 'GEramp', 500000000, 'constant')
+DFM1 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, cote, 'FVM', 'base', 'base', 'GEramp', 50000000, 'constant')
+DFM2 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, cote, 'FVM', 'blasius', 'base', 'GEramp', 50000000, 'constant')
 #DFM2 = DFMclass(nCells, u_inlet, P_outlet, h_inlet, height, fuelRadius, cladRadius, waterGap, 'FVM', 'base', 'base', 'modBestion')
 DFM1.resolveDFM()
 DFM2.resolveDFM()
