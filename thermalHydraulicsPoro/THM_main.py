@@ -34,7 +34,7 @@ class Version5_THM_prototype:
 
         # canal attributes
 
-        self.r_w = canal_radius # outer canal radius (m) if type is cylindrical, if type = square rw is the radius of inscribed circle in the square canal, ie half the square's side.
+        self.r_w = canal_radius # outer canal radius (m) if type is cylindrical, if type = square rw is the diameter of inscribed circle in the square canal, ie half the square's side.
         self.canal_type = canal_type # cylindrical or square, used to determine the cross sectional flow area in the canal and the hydraulic diameter
         self.Lf = fuel_rod_length # fuel rod length in m
         
@@ -44,7 +44,12 @@ class Version5_THM_prototype:
         self.I_z = I_z # number of mesh elements on axial mesh
         self.rhoInlet = 1000
         self.pOutlet =  pOutlet #Pa
-        self.uInlet = self.qFlow / self.rhoInlet #m/s
+        if canal_type == "cylindrical":
+            self.flowArea = np.pi*self.r_w**2 - np.pi*fuel_radius**2
+        else:
+            self.flowArea = self.r_w**2 - fuel_radius**2
+            
+        self.uInlet = self.qFlow / (self.rhoInlet*self.flowArea) #m/s
 
         self.Qfiss = Qfiss # amplitude of sine variation, or constant value if Qfiss_variation_type = "constant"
 

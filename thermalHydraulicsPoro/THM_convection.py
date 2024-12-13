@@ -72,7 +72,7 @@ class DFMclass():
 
         #calculate temporary hInlet
         pressureDrop = 186737 #Pa/m
-        falsePInlet = pOutlet - height * pressureDrop
+        falsePInlet = pOutlet + height * pressureDrop
         self.hInlet = IAPWS97(T = self.tInlet, P = falsePInlet * 10**(-6)).h*1000 #J/kg
         #print(f'hInlet: {self.hInlet}')
 
@@ -101,7 +101,10 @@ class DFMclass():
         self.DV = (self.height/self.nCells) * self.flowArea #Volume of the control volume m3
         
         if self.canalType == 'square':
+            print(f'cote: {self.cote}')
+            print(f'cladRadius: {self.cladRadius}')
             self.Dh =  4 * self.flowArea / ( 2*np.pi * self.cladRadius) #2*self.cote +
+            print(f'Dh: {self.Dh}')
         elif self.canalType == 'cylindrical':
             self.Dh = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
 
@@ -127,13 +130,13 @@ class DFMclass():
             self.D_h.append(self.Dh * self.poro[i]**2)
 
 
-        self.epsInnerIteration = 1e-3
+        self.epsInnerIteration = 1e-5
         self.maxInnerIteration = 1000
-        if self.numericalMethod == 'BiCGStab':
+        if self.numericalMethod == 'BiCGStab' or self.numericalMethod == 'BiCG':
             self.sousRelaxFactor = 0.8
         else:
             self.sousRelaxFactor = 1
-        self.epsOuterIteration = 1e-3
+        self.epsOuterIteration = 1e-5
         self.maxOuterIteration = 1000
 
         #Universal constant
@@ -168,6 +171,7 @@ class DFMclass():
             for i in range(len(Q)):
                 #self.q__.append(Q[i])
                 self.q__.append((Q[i] * np.pi * self.fuelRadius**2) / self.areaMatrix[i]) #W/m3
+            print(f'q__: {self.q__}')
         if self.dt != 0:
             print(f'Fission power transient')
             t_final_q = 0
@@ -514,7 +518,7 @@ class DFMclass():
 
     def calculateResiduals(self):#change les residus
         self.EPSresiduals.append(np.linalg.norm(self.voidFraction[-1] - self.voidFraction[-2]))
-        self.rhoResiduals.append(np.linalg.norm((self.rho[-1] - self.rho[-2])))
+        self.rhoResiduals.append(np.linalg.norm((self.rho[-1] - self.rho[-2])/self.rho[-1]))
         #self.UResiduals.append(np.linalg.norm((self.U[-1] - self.U[-2])/self.U[-1]))
         #self.rhoGResiduals.append(np.linalg.norm(self.rhoG[-1] - self.rhoG[-2]))
         #self.rhoLResiduals.append(np.linalg.norm(self.rhoL[-1] - self.rhoL[-2]))
@@ -591,7 +595,8 @@ class DFMclass():
             # Initialisation de la ligne qui sera mise à jour
             #self.line, = self.ax.plot(self.I, self.rhoResiduals, 'r-', marker='o')  # 'r-' pour une ligne rouge avec des marqueurs
 
-    
+            #print(f'Initial fields: U: {self.U[-1]}, P: {self.P[-1]}, H: {self.H[-1]}')
+
             for k in range(self.maxOuterIteration):
                 
                 self.createSystemVelocityPressure()
