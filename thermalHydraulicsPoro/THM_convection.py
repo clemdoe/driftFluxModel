@@ -108,9 +108,13 @@ class DFMclass():
         elif self.canalType == 'cylindrical':
             self.Dh = 4 * self.flowArea / (np.pi * self.waterRadius*2 + np.pi * self.cladRadius*2)
 
+        #BFBT !
+        #self.Dh = ((4*107.098)/54.645)*10**(-3) #m
+        #self.flowArea = 107.098*10**(-6) #m2
+
         self.Dz = self.height/self.nCells #Height of the control volume m
         self.z_mesh = np.linspace(0, self.height, self.nCells)
-        self.epsilonTarget = 0
+        self.epsilonTarget = 0.1
         self.K_loss = 0.0
         self.dx = self.height / self.nCells
 
@@ -130,13 +134,13 @@ class DFMclass():
             self.D_h.append(self.Dh * self.poro[i]**2)
 
 
-        self.epsInnerIteration = 1e-5
+        self.epsInnerIteration = 1e-3
         self.maxInnerIteration = 1000
         if self.numericalMethod == 'BiCGStab' or self.numericalMethod == 'BiCG':
             self.sousRelaxFactor = 0.8
         else:
             self.sousRelaxFactor = 1
-        self.epsOuterIteration = 1e-5
+        self.epsOuterIteration = 1e-3
         self.maxOuterIteration = 1000
 
         #Universal constant
@@ -606,7 +610,7 @@ class DFMclass():
                 self.U.append(Utemp)
                 self.P.append(Ptemp)
                 
-                #self.updateInlet()
+                self.updateInlet()
                 
                 self.createSystemEnthalpy()
                 resolveSystem = numericalResolution(self.FVM, self.H[-1], self.epsInnerIteration, self.maxInnerIteration, self.numericalMethod)

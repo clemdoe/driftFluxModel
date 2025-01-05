@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 compute_case_genfoam_NEW_Ex1_12223  = False
 compute_case_genfoam_NEW_Ex1_12223_transient = False
 compute_case_genfoam_comparaison_nCells = False
-compute_case_multiphys = False
+compute_case_multiphys = True
 compute_case_correlDFM = False
-compute_case_genfoam_NEW_Ex1_12223_multiphys = True
+compute_case_genfoam_NEW_Ex1_12223_multiphys = False
 compute_case_openfoam = False
 
 
