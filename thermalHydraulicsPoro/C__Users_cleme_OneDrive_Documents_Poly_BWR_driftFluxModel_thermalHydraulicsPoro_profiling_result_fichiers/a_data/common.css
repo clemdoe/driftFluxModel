@@ -1,0 +1,68 @@
+html, body {
+  overflow-x: hidden;
+}
+
+a.bonusok.disabled {
+    border: 1px solid rgb(255, 126, 120) !important;
+    background-color: transparent !important;
+	color: rgb(255, 126, 120) !important;
+}
+
+#progressbar-text {
+	letter-spacing: 1px;
+}
+
+.preloader-wrapper.active .spinner-layer.spinner-pink-only {
+  opacity: 1;
+  border-color: #ff7e78;
+  animation: fill-unfill-rotate 5332ms cubic-bezier(0.4, 0, 0.2, 1) infinite both
+}
+
+.loginLoader .preloader-wrapper, .registerLoader .preloader-wrapper {
+  top: 5px;
+}
+
+.preloader-wrapper.tiny {
+  width: 25px;
+  height: 25px;
+}
+
+.main > .preloader-wrapper,
+.main .logo-main-loader {
+  display: none;
+}
+
+.main-loader {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-loader * {
+   /* on cache tout tant que le chargement n'est pas fini */
+  visibility: hidden !important;
+}
+
+.main-loader .logo-main-loader,
+.main-loader .preloader-wrapper,
+.main-loader .preloader-wrapper * {
+  visibility: visible !important;
+  display: initial;
+}
+
+.main-loader .preloader-wrapper.tiny {
+  width: 50px;
+  height: 50px;
+}
+
+.main-loader .logo-main-loader {
+  position: absolute;
+  bottom: 0;
+}
+
+.emphasis-underline {
+  background-image: linear-gradient(180deg,transparent 75%,#0AEC8D80 0);
+  background-position: 0 -0.08em;
+}

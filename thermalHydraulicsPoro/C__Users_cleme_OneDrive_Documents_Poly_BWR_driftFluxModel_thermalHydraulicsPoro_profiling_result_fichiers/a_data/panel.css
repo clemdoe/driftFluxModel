@@ -1,0 +1,407 @@
+html {
+  font-size: 16px !important;
+}
+
+body {
+  /*font-family:"segoe UI";*/
+  font-family: "Open Sans", sans-serif;
+  min-width: 335px;
+}
+
+a {
+  color: rgb(14, 48, 91);
+  outline: none;
+}
+
+input[type="password"]:focus:not([readonly]),
+input[type="text"]:focus:not([readonly]),
+input[type="email"]:focus:not([readonly]) {
+  border-bottom: 1px solid rgb(255, 126, 120);
+  box-shadow: 0 1px 0 0 rgb(255, 126, 120);
+}
+
+.pulse {
+  animation: pulse-button 0.9s 15;
+}
+
+@keyframes pulse-button {
+  0% {
+    transform: scale(0.9);
+  }
+  70% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.9);
+  }
+}
+
+#email_error,
+#ids_error {
+  display: none;
+  color: red;
+  /*letter-spacing: 1px;*/
+  width: 100%;
+  z-index: 2;
+}
+
+#email_error {
+  position: absolute;
+  top: 0;
+  background-color: white;
+  cursor: text;
+}
+
+#ids_error {
+  height: 35px;
+  text-align: center;
+  color: red;
+  padding-top: 7px;
+}
+
+/*#ids_error {
+	display: none;
+	position: absolute;
+	color: red;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	padding-top: 70px;
+	background-color: white;
+	cursor: text;
+	z-index: 2;
+    background-color: rgba(255, 255, 255, 0.86);
+	text-align: center;
+}*/
+
+.progress .determinate {
+  background-color: rgb(255, 126, 120) !important;
+}
+
+.progress {
+  background-color: #ffebee !important;
+  height: 5px !important;
+  margin: 0;
+}
+
+#compare .store-name,
+#compare .price {
+  font-size: 13px;
+}
+#compare .price {
+  /*font-size:11px;*/
+  color: rgb(255, 126, 120) !important;
+}
+
+#compare .store-line {
+  margin-bottom: 0px !important;
+  cursor: pointer;
+}
+
+#compare .store-line:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.logo,
+.logo-main-loader {
+  width: 100px;
+  margin: 5px auto;
+}
+
+.accordeon .collapsible-header,
+.accordeon .material-icons {
+  height: 3.5rem !important;
+  line-height: 3.5rem !important;
+}
+
+.accordeon .material-icons {
+  margin-right: 15px;
+  font-size: 24px !important;
+}
+
+.accordeon .collapsible-header {
+  font-size: 16px;
+}
+
+.accordeon .collapsible-header.active {
+  background-color: rgb(255, 249, 248);
+}
+
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+#menu li a {
+  color: rgb(14, 48, 91);
+  padding: 0.4rem 1rem;
+  font-size: 14px;
+}
+
+/*
+* TOUR
+*/
+.tour-backdrop-wanteeed {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9991102;
+  background-color: #000;
+  opacity: 0.6;
+  filter: alpha(opacity=80);
+}
+.tour-step-backdrop-wanteeed {
+  position: relative;
+  z-index: 9991103;
+  background: inherit;
+}
+.tour-step-backdrop-wanteeed > td {
+  position: relative;
+  z-index: 9991103;
+}
+.tour-step-background-wanteeed {
+  position: absolute !important;
+  z-index: 9991102;
+  background: inherit;
+  border-radius: 6px;
+}
+
+/*restaurer l effet hover
+
+.btn {
+  overflow: hidden;
+}
+.btn:hover:before {
+  opacity:1;
+}
+
+.btn:before {
+    content: '';
+    opacity: 0;
+    background-color: rgba(0,0,0,.6);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    transition: opacity .2s;
+    z-index: -1;
+}*/
+
+#close > i {
+  transition: color 0.15s;
+}
+
+#close > i:hover {
+  color: #696969 !important;
+}
+
+#offerpanel i {
+  line-height: 59px;
+  font-size: 53px;
+  display: inherit;
+}
+
+#exclusionsContent ul {
+  padding: 0px 0px 0px 15px;
+  font-size: 12px;
+}
+
+#exclusionsContent ul li {
+  list-style-type: disc;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+#checkpanel {
+  flex-grow: 1;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  min-height: 212px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+#bonuspanel .panel {
+  height: initial;
+}
+
+.panel .circle {
+  width: 50px;
+  height: 50px;
+  line-height: 48px;
+  margin: 0 auto;
+  border: 1px solid rgb(255, 126, 120);
+  font-size: 25px;
+}
+
+.panel .circle.wide {
+  width: 70px;
+  height: 70px;
+  line-height: 70px;
+  cursor: pointer;
+}
+
+.panel .no-circle {
+  width: auto;
+  height: auto;
+  border: none;
+  line-height: auto;
+  font-size: 20px;
+}
+
+.invisible {
+  /* visibility: hidden; */
+  display: none;
+}
+
+.btn {
+  width: auto !important;
+  min-width: 195px;
+}
+
+.toggle-vouchers {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-vouchers::before {
+  content: "\203A";
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.toggle-vouchers.open::before {
+  transform: rotate(90deg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+}
+.header--gift .gift {
+  display: block !important;
+}
+
+.dropdown-content--shown {
+  display: block;
+  opacity: 1;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 37px;
+}
+.tabs .tab {
+  margin: 0 13px;
+}
+.tabs li.tab > a {
+  color: #0e305b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.tabs.register .tab,
+.tabs.login .tab {
+  width: 80px;
+}
+
+.header:not(.header--gift) .tabs .tab {
+  flex: 1;
+}
+.header--gift .tabs li.tab > a {
+  font-size: 12px;
+}
+
+.tabs li.tab > a.active {
+  border-bottom: 2px solid #ee6e73;
+  height: 42px;
+}
+
+.tab-content {
+  display: none;
+  width: 100%;
+  background-color: white;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.cta {
+  display: flex;
+  justify-content: center;
+}
+.cta button {
+  height: initial;
+  font-size: 16px;
+  margin-top: 30px;
+}
+.cta a {
+  color: #ff7e78;
+  cursor: pointer;
+  margin: 8px 0 15px 0;
+}
+
+#cardpanel {
+  overflow: auto;
+  height: 332px;
+}
+.cardLink {
+  cursor: pointer;
+}
+
+.intro {
+  margin-bottom: 10px;
+}
+.intro-logo {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.intro-logo > img {
+  width: 260px;
+}
+.intro-text {
+  display: flex;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.detail {
+  display: none;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+#graph img{
+  box-shadow: 0 0 88px 88px #590404 inset;
+}
+span#codeApplyRate {
+  color: rgb(0, 197, 97, 1);
+  text-transform: uppercase;
+}

@@ -1,0 +1,32 @@
+#blockerpanel {
+  padding: 1em 1em 0 1em;
+}
+
+#blockerpanel p, #blockeralert p {
+  font-size: 13px;
+}
+
+#blockerpanel p.bold, #blockeralert p.bold {
+  font-weight: bold;
+}
+
+#blockerpanel .adblock-unicorn, #blockeralert .adblock-unicorn {
+  width: 80px;
+}
+
+#blockerpanel .cta, #blockeralert .cta {
+  text-decoration: underline;
+  cursor: pointer;
+  color: #0e305b;
+}
+
+#blockerpanel .return, #blockeralert .return {
+  cursor: pointer;
+  color: #0e305b;
+  font-size: 11px;
+
+}
+
+#blockerpanel .cta:hover, #blockeralert .cta:hover {
+  opacity: 0.8;
+}

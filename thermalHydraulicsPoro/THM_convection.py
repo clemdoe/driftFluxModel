@@ -6,7 +6,6 @@
 # are provided to track residuals and convergence during iterative solving.
 
 # Authors : Clement Huet
-# Date : 2021-06-01
 # Python3 class part of THM_prototype
 # uses : - Drift flux model for two-phase flow
 #        - Finite volume method for discretization of the conservation equations
@@ -21,6 +20,7 @@ import matplotlib.pyplot as plt
 from THM_linalg import FVM
 from THM_linalg import numericalResolution
 from THM_waterProp import statesVariables
+import cProfile
 
 class DFMclass():
     def __init__(self, canal_type, nCells, tInlet, qFlow, pOutlet, height, fuelRadius, cladRadius, cote,  numericalMethod, frfaccorel, P2P2corel, voidFractionCorrel, dt = 0, t_tot = 0, D_h = 0, volumetricArea = 0):
@@ -58,6 +58,10 @@ class DFMclass():
         - splitVAR(): Splits the variables for the system of equations.
         - createBoundaryEnthalpy(): Sets the boundary saturation lines for enthalpy.
         """ 
+
+        if __name__ == "__main__":
+            cProfile.run('main()', filename='profiling_result.prof')
+
 
         #user choice
         self.frfaccorel = frfaccorel
@@ -351,6 +355,9 @@ class DFMclass():
                 ai = - rho_old[i]*VAR_old[i-self.nCells]*areaMatrix_old_2[i],
                 bi = rho_old[i+1]*VAR_old[i+1-self.nCells]*areaMatrix_old_1[i+1])
 
+        
+        print(f'VAR_VFM_Class: {VAR_VFM_Class.A}')
+        print(f'VAR_VFM_Class: {VAR_VFM_Class.D}')
         self.FVM = VAR_VFM_Class
 
     def createSystemEnthalpy(self):

@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 # Begining of the script used to test the THM prototype class.
 
 
-compute_case_genfoam_NEW_Ex1_12223  = False
+compute_case_genfoam_NEW_Ex1_12223  = True
 compute_case_genfoam_NEW_Ex1_12223_transient = False
 compute_case_genfoam_comparaison_nCells = False
-compute_case_multiphys = True
+compute_case_multiphys = False
 compute_case_correlDFM = False
 compute_case_genfoam_NEW_Ex1_12223_multiphys = False
 compute_case_openfoam = False
@@ -52,13 +52,13 @@ if compute_case_genfoam_NEW_Ex1_12223:
 
     ## Thermalhydraulics correlation
     voidFractionCorrel = "EPRIvoidModel"    #choice between 'EPRIvoidModel' and 'GEramp' and 'modBestion' and 'HEM1'
-    frfaccorel = "base"                #choice between 'Churchill' and 'blasius'
-    P2Pcorel = "HEM2"                       #choice between 'HEM1' and 'HEM2' and 'MNmodel'
+    frfaccorel = "Churchill"                #choice between 'Churchill' and 'blasius'
+    P2Pcorel = "lockhartMartinelli"                       #choice between 'HEM1' and 'HEM2' and 'MNmodel'
     numericalMethod = 'FVM'            #choice between 'BiCG', 'BiCGStab', 'GaussSiedel' and 'FVM'
 
     ############ Nuclear Parameters ###########
     ## Fission parameters
-    qFiss = 1943301220
+    qFiss = 4000000000#1943301220
     #qFiss = 1943301220 # W/m3
     ## Material parameters
     kFuel = 4.18 # W/m.K, TECHNICAL REPORTS SERIES No. 59 : Thermal Conductivity of Uranium Dioxide, IAEA, VIENNA, 1966
@@ -78,11 +78,11 @@ if compute_case_genfoam_NEW_Ex1_12223:
     print(Qfiss1)
 
         
-    frfaccorel = "Churchill"
-    case2 = Version5_THM_prototype(case_name, canalType,
-                 waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
-                 kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
-                 dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
+    #frfaccorel = "Churchill"
+    #case2 = Version5_THM_prototype(case_name, canalType,
+                # waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
+                # kFuel, Hgap, kClad, Iz1, If, I1, plot_at_z1, solveConduction,
+                # dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
     frfaccorel = "blasius"
     case3 = Version5_THM_prototype(case_name, canalType,
                  waterRadius, fuelRadius, gapRadius, cladRadius, height, tInlet, pOutlet, qFlow, Qfiss1,
@@ -90,7 +90,7 @@ if compute_case_genfoam_NEW_Ex1_12223:
                  dt = 0, t_tot = 0, frfaccorel = frfaccorel, P2Pcorel = P2Pcorel, voidFractionCorrel = voidFractionCorrel, numericalMethod = numericalMethod)
 
 
-    plotter = plotting([case2, case3])#
+    plotter = plotting([case3])#
     #plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
     genFoamVolumeFraction = 0.5655077285
     plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'frfaccorel', [True, True, True, True, True, True], genFoamVolumeFraction)
@@ -488,7 +488,6 @@ if compute_case_genfoam_NEW_Ex1_12223_multiphys:
     #plotter.plotComparison("voidFractionCorrel", [True, True, True, True, True, True])
     genFoamVolumeFraction = 0.5655077285
     plotter.GenFoamComp(r"C:\Users\cleme\OneDrive\Documents\Poly\BWR\driftFluxModel\thermalHydraulicsTransitoire\results.xlsx", 'frfaccorel', [True, True, True, True, True, True], genFoamVolumeFraction)
-
     
 if compute_case_correlDFM:
 

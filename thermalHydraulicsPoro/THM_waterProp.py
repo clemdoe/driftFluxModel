@@ -279,7 +279,6 @@ class statesVariables():
             if epriCorrel == "1":
                 if xeq >= Xs:
                     QUALITY = xeq
-                    print(f'IF 1')
                 else:
                     rhol = self.rholTEMP[i]
                     rhog = self.rhogTEMP[i]
@@ -564,18 +563,10 @@ class statesVariables():
         return rho * abs(Ug) * self.D_h[i] / m
     
     def getUl(self, i):
-        print('Inside Ul')
-        print(f'Void fraction: {self.voidFractionTEMP[i]}')
-        print(f'rho: {self.rhoTEMP[i]}, rho_g: {self.rhogTEMP[i]}')
-        print(f'VgjPrime: {self.VgjPrimeTEMP[i]}')
-        print(f'U: {self.U[i]}')
-        print(f'(1 - voidFraction): {1 - self.voidFractionTEMP[i]}')
+
         return self.U[i] - (self.voidFractionTEMP[i] / ( 1 - self.voidFractionTEMP[i])) * (self.rhogTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
     
     def getUg(self, i):
-        print('Inside Ug')
-        print(f'Void fraction: {self.voidFractionTEMP[i]}')
-        print(f'rho_l: {self.rholTEMP[i]}, rho_g: {self.rhogTEMP[i]}')
         return self.U[i] + (self.rholTEMP[i] / self.rhoTEMP[i]) * self.VgjPrimeTEMP[i]
 
     def lockhartMartinelli(self, i):
