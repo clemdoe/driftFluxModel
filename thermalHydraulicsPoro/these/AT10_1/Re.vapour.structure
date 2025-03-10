@@ -10,93 +10,92 @@ FoamFile
     version     2.0;
     format      ascii;
     arch        "LSB;label=32;scalar=64";
-    class       surfaceScalarField;
+    class       volScalarField;
     location    "30/fluidRegion";
-    object      alphaPhi.vapour;
+    object      Re.vapour.structure;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 3 -1 0 0 0 0];
-
-oriented        oriented;
+dimensions      [0 0 0 0 0 0 0];
 
 internalField   nonuniform List<scalar> 
-74
+75
 (
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+15.9469
+25.1628
+36.4399
+49.8193
+65.3616
+83.1383
+103.227
+125.703
+150.639
+178.092
+208.104
+240.694
+275.854
+313.546
+353.629
+395.413
+438.806
+483.858
+530.589
+578.973
+628.948
+680.421
+733.306
+782.482
 )
 ;
 
@@ -104,18 +103,15 @@ boundaryField
 {
     inlet
     {
-        type            calculated;
-        value           uniform -0;
+        type            zeroGradient;
     }
     outlet
     {
-        type            calculated;
-        value           uniform 0;
+        type            zeroGradient;
     }
     fixedWalls
     {
-        type            calculated;
-        value           uniform 0;
+        type            zeroGradient;
     }
 }
 

@@ -10,18 +10,16 @@ FoamFile
     version     2.0;
     format      ascii;
     arch        "LSB;label=32;scalar=64";
-    class       surfaceScalarField;
+    class       volScalarField;
     location    "30/fluidRegion";
-    object      alphaPhi.vapour;
+    object      alpha.vapour;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 3 -1 0 0 0 0];
-
-oriented        oriented;
+dimensions      [0 0 0 0 0 0 0];
 
 internalField   nonuniform List<scalar> 
-74
+75
 (
 0
 0
@@ -71,32 +69,33 @@ internalField   nonuniform List<scalar>
 0
 0
 0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
+0.000190949
+0.000839836
+0.00186576
+0.00324233
+0.00494928
+0.00697252
+0.00930027
+0.011922
+0.014827
+0.0180038
+0.0214392
+0.025118
+0.0290226
+0.0331325
+0.0374249
+0.0418747
+0.0464544
+0.051122
+0.055783
+0.0604381
+0.0650823
+0.069709
+0.0743093
+0.0788723
+0.083386
+0.0878462
+0.091424
 )
 ;
 
@@ -104,18 +103,21 @@ boundaryField
 {
     inlet
     {
-        type            calculated;
-        value           uniform -0;
+        type            inletOutlet;
+        phi             phi.vapour;
+        inletValue      uniform 0;
+        value           uniform 0;
     }
     outlet
     {
-        type            calculated;
-        value           uniform 0;
+        type            inletOutlet;
+        phi             phi.vapour;
+        inletValue      uniform 0;
+        value           uniform 0.091424;
     }
     fixedWalls
     {
-        type            calculated;
-        value           uniform 0;
+        type            zeroGradient;
     }
 }
 

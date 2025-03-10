@@ -1,0 +1,182 @@
+***********************************************************
+* Input file :  pincell_mphy_thm.x2m                      *
+*                                                         *
+* Test of a PWR single pincell                            *
+*                                                         *
+* The aim is to test the THM module of DONJON             *
+***********************************************************
+ 
+LINKED_LIST Geom Track Flux Cpo Matex Lib MicroF MacroF Macro2 Fmap
+            System Power Burnup Thm DONNEES ;
+MODULE      GEO: RESINI: TRIVAT: TRIVAA: GREP: FIND0: NCR: FLUD: FLPOW:
+            MACINI: USPLIT: TINST: UTL: DELETE: ABORT: THM: END: ;
+
+PROCEDURE   assertS ;
+SEQ_ASCII   _ACompo ;
+INTEGER     maxstep := 67 ;
+REAL        Fuelpwr := 30.0796 ; ! W/g ou kW/kg ou MW/t
+REAL        Mass := 6.464E-3 ; ! kg
+
+*----
+*  Calculation options
+*----
+STRING Dir := "EDI2B" ;
+REAL   Tfuel := 900.0 ; (*fuel temperature (K)*)
+REAL   Tcool := 500.0 ; (*coolant temperature (K)*)
+REAL   Dfuel := 9.7413951 ; (*fuel density (g/cc)*)
+REAL   dens_mod_0 := 0.65 ;
+REAL   powi := 0.0591122 ;
+ECHO "total reactor power=" powi "MW" ;
+*----
+*  Recover the Multicompo
+*----
+Cpo := _ACompo ;
+UTL: Cpo :: DIR ;
+
+INTEGER MaxR := 10000 ;
+INTEGER Iter := 1 ;
+REAL keff11 keff12 keff1n ;
+REAL Y1 Y2 ROOT YNEW ;
+LOGICAL CONV ;
+REAL maxh := 200.0 ;
+REAL z1 := 20.0 ;
+REAL z2 := 40.0 ;
+REAL z3 := 60.0 ;
+REAL z4 := 80.0 ;
+REAL z5 := 100.0 ;
+REAL z6 := 120.0 ;
+REAL z7 := 140.0 ;
+REAL z8 := 160.0 ;
+REAL z9 := 180.0 ;
+REAL z10 := 200.0 ;
+
+REAL Cote      := 1.404  ;
+Geom := GEO: :: CAR3D 1 1 10
+   X- REFL X+ REFL    Y- REFL Y+ REFL    Z- REFL Z+ REFL
+   MESHX 0.0 <<Cote>>
+   MESHY 0.0 <<Cote>>
+   MESHZ 0.0 <<z1>> <<z2>> <<z3>> <<z4>> <<z5>> <<z6>> <<z7>> <<z8>> 
+            <<z9>> <<z10>>
+   MIX
+   PLANE 1
+      1
+   PLANE 2  SAME 1
+   PLANE 3  SAME 1
+   PLANE 4  SAME 1
+   PLANE 5  SAME 1
+   PLANE 6  SAME 1
+   PLANE 7  SAME 1
+   PLANE 8  SAME 1
+   PLANE 9  SAME 1
+   PLANE 10  SAME 1
+;
+
+Geom Matex := USPLIT: Geom :: NGRP 2 MAXR <<MaxR>>
+               NFUEL 1  FMIX  1
+;
+
+Track := TRIVAT: Geom ::
+   EDIT 1 MAXR <<MaxR>> MCFD 1 ;
+
+*--
+* Fuel map definition
+*--
+Fmap Matex := RESINI: Matex ::
+      ::: GEO: CAR3D 1 1 10
+                EDIT  0
+                X- REFL X+ REFL    Y- REFL Y+ REFL    Z- REFL Z+ REFL
+   MESHX 0.0 <<Cote>>
+   MESHY 0.0 <<Cote>>
+   MESHZ 0.0 <<z1>> <<z2>> <<z3>> <<z4>> <<z5>> <<z6>> <<z7>> <<z8>> 
+            <<z9>> <<z10>>
+   MIX
+   PLANE 1
+      1
+   PLANE 2  SAME 1
+   PLANE 3  SAME 1
+   PLANE 4  SAME 1
+   PLANE 5  SAME 1
+   PLANE 6  SAME 1
+   PLANE 7  SAME 1
+   PLANE 8  SAME 1
+   PLANE 9  SAME 1
+   PLANE 10  SAME 1
+;
+!
+NXNAME '01' NYNAME  'A'
+NCOMB 1
+B-ZONE 1
+
+ADD-PARAM PNAME 'T-FUEL' PARKEY 'TFA' GLOBAL
+ADD-PARAM PNAME 'T-COOL' PARKEY 'TCA' GLOBAL
+ADD-PARAM PNAME 'D-FUEL' PARKEY 'DFA' GLOBAL
+ADD-PARAM PNAME 'D-COOL' PARKEY 'DCA' GLOBAL
+BTYPE INST-BURN
+INST-BVAL CHAN 0.0
+REACTOR-POW <<powi>> AXIAL-PFORM 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 
+SET-PARAM 'T-FUEL' <<Tfuel>>
+SET-PARAM 'T-COOL' <<Tcool>>
+SET-PARAM 'D-FUEL' <<Dfuel>>
+SET-PARAM 'D-COOL' <<dens_mod_0>>
+FUEL WEIGHT <<Mass>>
+;
+
+UTL: Fmap :: STEP UP PARAM STEP AT 4 DIR IMPR P-NAME * ;
+*--
+* THM single-stage calculation
+*--
+Thm Fmap := THM: Fmap ::
+    EDIT 100
+    FLUID H2O
+    FPUISS 1.0
+    INLET 10.8E6 (*Pa*) 500.0 (*K*)
+    INLET-Q 2.1268E-5 (*m2*) 0.148880 (*inlet mass flow rate kg/s*)
+    ASSMB 1 0
+    RADIUS 5.6E-3 6.14E-3 6.52E-3 7.02E-3 (* m *)
+    RODMESH 8 11
+    HGAP 10000.0
+    CONDC 0 10.0 KELVIN
+    CONDF 0 5.0 KELVIN
+    MONO
+;
+
+*--
+* Dump THM object
+*--
+UTL: Thm :: DIR DUMP ;
+
+*--
+* Cross-section database interpolation
+*--
+MicroF := NCR: Cpo Fmap ::
+       EDIT 2
+       MICRO LINEAR
+       TABLE Cpo <<Dir>> 'burnup'
+         MIX 1 INST-BURN
+               SET LINEAR 'burnup' MAP
+               SET CUBIC 'DCA' <<dens_mod_0>>
+               SET CUBIC 'DCAH' <<dens_mod_0>>
+               ADD 'DCA' <<dens_mod_0>> MAP
+                        REF 'burnup' SAMEASREF
+                        ENDREF
+         ENDMIX
+  ;
+MacroF := MicroF :: STEP UP 'MACROLIB' ;
+  
+Macro2 Matex := MACINI: Matex MacroF :: FUEL ;
+  
+*--
+* Steady-state diffusion calculation
+*--
+System := TRIVAA: Macro2 Track ;
+
+Flux := FLUD: System Track :: EDIT 1 ADI 4 ACCE 5 3 ;
+System MacroF Macro2 := DELETE: System MacroF Macro2 ;
+
+GREP: Flux :: GETVAL 'K-EFFECTIVE' 1 >>keff11<< ;
+ECHO "+++ Burnup= 0.0 Keff=" keff11 ;
+
+*assertS Flux :: 'K-EFFECTIVE' 1 1.354165 ;
+
+ECHO "test pincell_mphy_thm.x2m completed" ;
+END: ;
