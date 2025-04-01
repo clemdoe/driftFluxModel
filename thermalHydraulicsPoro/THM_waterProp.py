@@ -256,7 +256,6 @@ class statesVariables():
             hfg = IAPWS97(P = self.P[i]*(10**(-6)), x = 0).h
             if H*0.001 < hl:
                 x = (H*0.001 - hl)/(hg - hl)
-                xsub = self.q__[i]*self.DV/(self.qFlow * self.areaMatrix[i] * hfg)
                 return 0
             elif H*0.001 > hg:
                 return 1

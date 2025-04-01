@@ -114,7 +114,11 @@ class Version5_THM_prototype:
             self.get_Tfuel_surface() # store in the T_fuel_surface attribute the fuel surface temperature computed
 
             # extend to Twater : adding a mesh point corresponding to the middle of the canal in the plotting array, add rw to the bounds array and add Twater to the results array
+            print(f'len(self.convection_sol.z_mesh): {len(self.convection_sol.z_mesh)}')
+            print(f'len of self.T_distributions_axial: {len(self.T_distributions_axial)}')
+            print(f'len of self.convection_sol.T_water: {len(self.convection_sol.T_water)}')
             for index_z in range(len(self.convection_sol.z_mesh)):
+                print(f'index_z: {index_z}')
                 self.T_distributions_axial[index_z].extend_to_canal_visu(rw = self.convection_sol.wall_dist, Tw = self.convection_sol.T_water[index_z])
                 
             if self.plot_results:

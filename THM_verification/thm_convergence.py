@@ -121,3 +121,107 @@ plt.show()
 
 print(f'pcool 100:{pcool[-1]}')
 print(f'vcool 100:{vcool[-1]}')
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Données issues du tableau
+categories = ['Pressure', 'Void fraction', 'Temperature']
+
+# ΔRMS
+rms_10 = [3.07, 0.024, 0.341]   # 10 kW
+rms_35 = [9.55, 0.101, 1.63]    # 35 kW
+
+# Δmax
+max_10 = [4.00, 0.063, 1.13]
+max_35 = [12.5, 0.264, 3.15]
+
+# Δavg
+avg_10 = [2.85, 0.009, 0.225]
+avg_35 = [8.77, 0.088, 1.52]
+
+x = np.arange(len(categories))  # positions sur l'axe x
+width = 0.35                    # largeur des barres
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+# --- 1) Sous-graphe pour ΔRMS ---
+axes[0].bar(x - width/2, rms_10, width, label='10 kW', color='#B0CDD9')
+axes[0].bar(x + width/2, rms_35, width, label='35 kW', color='#f25E5E')
+axes[0].set_xticks(x)
+axes[0].set_xticklabels(categories, rotation=15)
+axes[0].set_title('ΔRMS')
+axes[0].legend()
+axes[0].set_ylabel('Valeur')
+
+# --- 2) Sous-graphe pour Δmax ---
+axes[1].bar(x - width/2, max_10, width, label='10 kW', color='#B0CDD9')
+axes[1].bar(x + width/2, max_35, width, label='35 kW', color='#f25E5E')
+axes[1].set_xticks(x)
+axes[1].set_xticklabels(categories, rotation=15)
+axes[1].set_title('Δmax')
+axes[1].legend()
+
+# --- 3) Sous-graphe pour Δavg ---
+axes[2].bar(x - width/2, avg_10, width, label='10 kW', color='#B0CDD9')
+axes[2].bar(x + width/2, avg_35, width, label='35 kW', color='#f25E5E')
+axes[2].set_xticks(x)
+axes[2].set_xticklabels(categories, rotation=15)
+axes[2].set_title('Δavg')
+axes[2].legend()
+
+plt.tight_layout()
+plt.show()
+
+
+
+# Données issues du tableau
+categories = ['ΔRMS', 'ΔMAX', 'ΔAVG']
+
+####
+# Pressure
+P_10 = [3.07, 4.00, 2.85]   # 10 kW
+P_35 = [9.55, 12.5, 8.77]    # 35 kW
+
+# Void Fraction
+VF_10 = [0.024, 0.063, 0.009]
+VF_35 = [0.101, 0.264, 0.088]
+
+# Temperature
+T_10 = [0.341, 1.13, 0.225]
+T_35 = [1.63, 3.15, 1.52]
+
+x = np.arange(len(categories))  # positions sur l'axe x
+width = 0.35                    # largeur des barres
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+# --- 1) Sous-graphe pour ΔRMS ---
+axes[0].bar(x - width/2, P_10, width, label='10 kW', color='#B0CDD9')
+axes[0].bar(x + width/2, P_35, width, label='35 kW', color='#f25E5E')
+axes[0].set_xticks(x)
+axes[0].set_xticklabels(categories, rotation=15)
+axes[0].set_title('Pressure')
+axes[0].legend()
+axes[0].set_ylabel('Ecart %')
+
+# --- 2) Sous-graphe pour Δmax ---
+axes[1].bar(x - width/2, VF_10, width, label='10 kW', color='#B0CDD9')
+axes[1].bar(x + width/2, VF_35, width, label='35 kW', color='#f25E5E')
+axes[1].set_xticks(x)
+axes[1].set_xticklabels(categories, rotation=15)
+axes[1].set_title('Void Fraction')
+axes[1].legend()
+axes[1].set_ylabel('Ecart %')
+
+# --- 3) Sous-graphe pour Δavg ---
+axes[2].bar(x - width/2, T_10, width, label='10 kW', color='#B0CDD9')
+axes[2].bar(x + width/2, T_35, width, label='35 kW', color='#f25E5E')
+axes[2].set_xticks(x)
+axes[2].set_xticklabels(categories, rotation=15)
+axes[2].set_title('Temperature')
+axes[2].legend()
+axes[2].set_ylabel('Ecart %')
+
+plt.tight_layout()
+plt.show()
